@@ -33,6 +33,11 @@ import threading
 import ba
 import _ba
 
+
+from pypresence.utils import get_event_loop
+from urllib.request import Request , urlopen
+from codecs import encode
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -70,7 +75,7 @@ class RpcThread(threading.Thread):
     def __init__(self):
         super().__init__()
         self.rpc = pypresence.Presence(963434684669382696)
-        self.state: str | None = None
+        self.state: str | None = 'In Game'
         self.details: str | None = 'Main Menu'
         self.start_timestamp = time.mktime(time.localtime())
         self.large_image_key: str | None = 'bombsquadicon'
@@ -110,7 +115,7 @@ class RpcThread(threading.Thread):
         self._last_secret_update_time = time.time()
 
     def run(self) -> None:
-        asyncio.set_event_loop(asyncio.new_event_loop())
+        asyncio.set_event_loop(get_event_loop())
         while not self.should_close:
             if time.time() - self._last_update_time > 0.1:
                 self._update_presence()
@@ -152,7 +157,7 @@ class RpcThread(threading.Thread):
 
     def _do_update_presence(self) -> None:
         data = self.rpc.update(
-            state=self.state or '<N/A>',
+            state=self.state or '  ',
             details=self.details,
             start=self.start_timestamp,
             large_image=self.large_image_key,
@@ -205,6 +210,19 @@ class RpcThread(threading.Thread):
         ba.pushcall(ba.Call(ba.screenmessage,
                             'Discord: {}#{} wants to join!'.format(username, discriminator),
                             color=(0.0, 1.0, 0.0)), from_other_thread=True)
+
+def get_asset():
+    dirpath = _ba.app.python_directory_user
+    if not f'{dirpath}/largesets.txt':
+        response = Request('https://discordapp.com/api/oauth2/applications/963434684669382696/assets', headers={'User-Agent': 'Mozilla/5.0'}) 
+        with urlopen(response) as assets:
+            assets = json.loads(assets.read().decode())
+        asset = [assetname['name'] for assetname in assets]
+        with open(f'{dirpath}\largesets.txt', "wb") as imagesets:
+            imagesets.write(encode(str(asset)))
+    with open(f'{dirpath}\largesets.txt', "r") as maptxt:
+        maptxt = maptxt.read()
+    return maptxt
     
 
 # ba_meta export plugin
@@ -216,6 +234,7 @@ class DiscordRP(ba.Plugin):
         self._last_server_info = None
         
         _redefine_activity_init()
+        get_asset()
 
     def on_app_running(self) -> None:
         self.rpc_thread.start()
@@ -231,13 +250,22 @@ class DiscordRP(ba.Plugin):
         act = _ba.get_foreground_host_activity()
         if isinstance(act, ba.GameActivity):
             return act.name
-        name: str | None = (act.__class__.__name__.replace(
-            'Activity', '').replace('ScoreScreen', ' Results'))
+        this = "Lobby"
+        name: str | None = (
+            act.__class__.__name__.replace("Activity", "")
+            .replace("ScoreScreen", "Ranking")
+            .replace("Coop", '')
+            .replace("MultiTeam", '')
+        ).replace("Victory", "").replace('EndSession', '').replace('Transition', '').replace('Draw', '').replace('FreeForAll', '').replace('Join',this).replace('Team','')
 
-        if name == 'MainMenu':
-            name = 'Main Menu'
-        if name == 'NoneType':
-            name = None
+        if name == "MainMenu":
+            name = "Main Menu"
+        if name == this:
+            self.rpc_thread.large_image_key = 'lobby'
+            self.rpc_thread.large_image_text = "Bombing up"  
+        if name == "Ranking":
+            self.rpc_thread.large_image_key = 'ranking'
+            self.rpc_thread.large_image_text  = 'Viewing Results'
         return name
 
     def _get_current_map_name(self) -> Tuple[str | None, str | None]:
@@ -265,16 +293,31 @@ class DiscordRP(ba.Plugin):
             self._last_server_info = svinfo
             self.rpc_thread.party_id = str(uuid.uuid4())
             self.rpc_thread._update_secret()
-        if connection_info:
-            servername = connection_info['name']
-            if self.rpc_thread.details != 'Online' or self.rpc_thread.state != servername:
-                self.rpc_thread.start_timestamp = time.mktime(time.localtime())
+        if connection_info != {}:
+            servername = connection_info["name"]
+            self.rpc_thread.start_timestamp = time.mktime(time.localtime())
             self.rpc_thread.details = 'Online'
-            self.rpc_thread.state = servername
-        else:
-            self.rpc_thread.details = self._get_current_activity_name() or '<Unknown>'
-            self.rpc_thread.state = (ba.app.config.get('Public Party Name', 'Local Party')
-                          if _ba.get_public_party_enabled() else None)
+
+            if len(servername) == 19 and "Private Party" in servername:
+                    self.rpc_thread.state = "Private Party"
+            elif servername == "": # A local game joinable from the internet
+                    try:
+                        self.rpc_thread.state =  json.loads(_ba.get_game_roster()[0]["spec_string"])["n"]
+                    except IndexError:
+                        pass
+            else:
+                self.rpc_thread.state = servername
+               
+        if connection_info == {}:
+            self.rpc_thread.details = "Local"
+            self.rpc_thread.state = self._get_current_activity_name()
+            if _ba.get_foreground_host_session() is not None and  self.rpc_thread.details == 'Local' :
+                session = _ba.get_foreground_host_session().__class__.__name__.replace('MainMenuSession', '').replace('EndSession','').replace('FreeForAllSession',': FFA').replace('DualTeamSession', ': Teams').replace('CoopSession', ': Coop')
+                self.rpc_thread.details = f'{self.rpc_thread.details} {session}'
+            if self.rpc_thread.state == "NoneType":  #sometimes the game just breaks which means its not really watching replay FIXME
+                self.rpc_thread.state = "Watching Replay"
+                self.rpc_thread.large_image_key = "replay"
+                self.rpc_thread.large_image_text = 'Viewing Awesomeness'
 
             act = _ba.get_foreground_host_activity()
             session = _ba.get_foreground_host_session()
@@ -317,8 +360,15 @@ class DiscordRP(ba.Plugin):
 
             mapname, short_map_name = self._get_current_map_name()
             if mapname:
-                self.rpc_thread.large_image_text = mapname
-                self.rpc_thread.large_image_key = short_map_name
-                self.rpc_thread.small_image_key = 'bombsquadlogo2'
-                self.rpc_thread.small_image_text = 'BombSquad'
-    
+                if  short_map_name in get_asset():
+                    self.rpc_thread.large_image_text = mapname
+                    self.rpc_thread.large_image_key =  short_map_name 
+                    self.rpc_thread.small_image_key = "bombsquadlogo2"
+                    self.rpc_thread.small_image_text = "BombSquad"
+
+            
+        if _ba.get_idle_time() / (1000 * 60) % 60 >= 0.2:
+            self.rpc_thread.details = f"AFK in {self.rpc_thread.details}"
+            self.rpc_thread.large_image_key = (
+                "https://media.tenor.com/uAqNn6fv7x4AAAAM/bombsquad-spaz.gif"
+            )
