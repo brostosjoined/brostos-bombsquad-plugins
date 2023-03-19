@@ -211,15 +211,23 @@ class RpcThread(threading.Thread):
                             'Discord: {}#{} wants to join!'.format(username, discriminator),
                             color=(0.0, 1.0, 0.0)), from_other_thread=True)
 
-def get_asset():
-    dirpath = _ba.app.python_directory_user
-    if not f'{dirpath}/largesets.txt':
-        response = Request('https://discordapp.com/api/oauth2/applications/963434684669382696/assets', headers={'User-Agent': 'Mozilla/5.0'}) 
-        with urlopen(response) as assets:
-            assets = json.loads(assets.read().decode())
-        asset = [assetname['name'] for assetname in assets]
-        with open(f'{dirpath}\largesets.txt', "wb") as imagesets:
+dirpath = _ba.app.python_directory_user
+run_once = False
+
+def get_once_asset():
+    global run_once
+    if run_once:
+        return 
+    response = Request('https://discordapp.com/api/oauth2/applications/963434684669382696/assets', headers={'User-Agent': 'Mozilla/5.0'})
+    with urlopen(response) as assets:
+        assets = json.loads(assets.read().decode()) 
+    asset = [assetname['name'] for assetname in assets]
+    with open(f'{dirpath}\largesets.txt', "wb") as imagesets:
             imagesets.write(encode(str(asset)))
+    run_once = True
+    
+    
+def get_asset():
     with open(f'{dirpath}\largesets.txt', "r") as maptxt:
         maptxt = maptxt.read()
     return maptxt
