@@ -287,9 +287,22 @@ class DiscordRP(ba.Plugin):
 
     def update_status(self) -> None:
         roster = _ba.get_game_roster()
-        self.rpc_thread.party_size = max(1,
-                              sum(len(client['players']) for client in roster))
-        self.rpc_thread.party_max = max(8, self.rpc_thread.party_size)
+        try:
+            if json.loads(_ba.get_game_roster()[0]["spec_string"])['a'] == 'Server':
+                self.rpc_thread.party_size = max(
+                    1, len(_ba.get_game_roster())-1
+                )
+            elif sum(len(client["players"]) for client in _ba.get_game_roster()) == 0:
+                self.rpc_thread.party_size = max(
+                    1, len(_ba.get_game_roster())
+                )
+            else:
+                self.rpc_thread.party_size = max(
+                    1, sum(len(client["players"]) for client in roster)
+                )
+            self.rpc_thread.party_max = max(8, self.rpc_thread.party_size)
+        except IndexError:
+            pass
 
         self.rpc_thread.large_image_key = 'bombsquadicon'
         self.rpc_thread.large_image_text = 'BombSquad'
