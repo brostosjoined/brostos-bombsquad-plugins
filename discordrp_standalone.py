@@ -242,8 +242,9 @@ class DiscordRP(ba.Plugin):
         self._last_server_info = None
         
         _redefine_activity_init()
-        get_asset()
         get_once_asset()
+        get_asset()
+        
 
     def on_app_running(self) -> None:
         self.rpc_thread.start()
