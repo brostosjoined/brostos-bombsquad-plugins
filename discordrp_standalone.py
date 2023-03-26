@@ -63,7 +63,7 @@ def log(msg: str) -> None:
         print(f"LOG in discordrp.py: {msg}")
 
 
-def _redefine_activity_init() -> None:
+def _run_overrides() -> None:
     old_init = ba.Activity.__init__
 
     def new_init(self, *args: Any, **kwargs: Any) -> None:  # type: ignore
@@ -71,6 +71,17 @@ def _redefine_activity_init() -> None:
         self._discordrp_start_time = time.mktime(time.localtime())
 
     ba.Activity.__init__ = new_init  # type: ignore
+
+    old_connect = _ba.connect_to_party
+
+    def new_connect(*args, **kwargs) -> None:  # type: ignore
+        global _last_server_addr
+        global _last_server_port
+        old_connect(*args, **kwargs)
+        c = kwargs.get("address") or args[0]
+        _last_server_port = kwargs.get("port") or args[1]
+
+    _ba.connect_to_party = ba.internal.connect_to_party = new_connect
 
 
 class RpcThread(threading.Thread):
@@ -97,8 +108,8 @@ class RpcThread(threading.Thread):
         # resp = requests.get('https://legacy.ballistica.net/bsAccessCheck').text
         connection_info = _ba.get_connection_to_host_info()
         if connection_info:
-            addr = connection_info["address"]
-            port = connection_info["port"]
+            addr = _last_server_addr
+            port = _last_server_port
         else:
             with urllib.request.urlopen(
                 "https://legacy.ballistica.net/bsAccessCheck"
@@ -262,7 +273,7 @@ class DiscordRP(ba.Plugin):
         self.rpc_thread = RpcThread()
         self._last_server_info = None
 
-        _redefine_activity_init()
+        _run_overrides()
         get_once_asset()
         get_asset()
 
