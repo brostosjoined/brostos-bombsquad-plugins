@@ -330,12 +330,6 @@ class DiscordRP(ba.Plugin):
     def update_status(self) -> None:
         roster = _ba.get_game_roster()
         connection_info = _ba.get_connection_to_host_info()
-        if connection_info != {}:
-            self.rpc_thread.party_size = max(1, len(_ba.get_game_roster()))
-        elif connection_info == {}:
-            self.rpc_thread.party_size = max(
-                1, sum(len(client["players"]) for client in roster)
-            )
         self.rpc_thread.party_max = max(8, self.rpc_thread.party_size)
 
         self.rpc_thread.large_image_key = "bombsquadicon"
@@ -344,7 +338,6 @@ class DiscordRP(ba.Plugin):
         self.rpc_thread.small_image_text = (
             f"{_ba.app.platform.capitalize()}({_ba.app.version})"
         )
-
         connection_info = _ba.get_connection_to_host_info()
         svinfo = str(connection_info)
         if self._last_server_info != svinfo:
@@ -354,27 +347,35 @@ class DiscordRP(ba.Plugin):
         if connection_info != {}:
             servername = connection_info["name"]
             self.rpc_thread.details = "Online"
-
+            self.rpc_thread.party_size = max(
+                1, sum(len(client["players"]) for client in roster)
+            )
+            self.rpc_thread.party_max = max(8, self.rpc_thread.party_size)
             if len(servername) == 19 and "Private Party" in servername:
                 self.rpc_thread.state = "Private Party"
             elif servername == "":  # A local game joinable from the internet
                 try:
-                    offlinename = json.loads(_ba.get_game_roster()[0]["spec_string"])["n"]
-                    if len(offlinename>19):
-                        self.rpc_thread.state = offlinename[slice(19)]+"..."
+                    offlinename = json.loads(_ba.get_game_roster()[0]["spec_string"])[
+                        "n"
+                    ]
+                    if len(offlinename > 19):
+                        self.rpc_thread.state = offlinename[slice(19)] + "..."
                     else:
                         self.rpc_thread.state = offlinename
                 except IndexError:
                     pass
             else:
-                if len(servername)>19:
-                    self.rpc_thread.state = servername[slice(19)]+".."
+                if len(servername) > 19:
+                    self.rpc_thread.state = servername[slice(19)] + ".."
                 else:
                     self.rpc_thread.state = servername[slice(19)]
 
         if connection_info == {}:
             self.rpc_thread.details = "Local"
             self.rpc_thread.state = self._get_current_activity_name()
+            self.rpc_thread.party_size = max(1, len(_ba.get_game_roster()))
+            self.rpc_thread.party_max = max(8, self.rpc_thread.party_size)
+
             if (
                 _ba.get_foreground_host_session() is not None
                 and self.rpc_thread.details == "Local"
