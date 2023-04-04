@@ -255,13 +255,13 @@ def get_once_asset():
     with urlopen(response) as assets:
         assets = json.loads(assets.read().decode())
     asset = [assetname["name"] for assetname in assets]
-    with open(f"{dirpath}\largesets.txt", "wb") as imagesets:
+    with open(f"{dirpath}\\largesets.txt", "wb") as imagesets:
         imagesets.write(encode(str(asset)))
     run_once = True
 
 
 def get_asset():
-    with open(f"{dirpath}\largesets.txt", "r") as maptxt:
+    with open(f"{dirpath}\\largesets.txt", "r") as maptxt:
         maptxt = maptxt.read()
     return maptxt
 
