@@ -9,6 +9,6 @@ A mod for the game  Bombsquad to display custom rich presence for mobile and des
 ![ShareX_RcuOF8204k](https://user-images.githubusercontent.com/67740566/231027333-924bd5d2-876c-4fe7-b831-b449012eeac4.png)
 
 # KizzyRPC
-If you would like custom rpc for android I consider checking out Kizzy
+If you would like custom rpc for android I consider checking out Kizzy a really great app.
 
 [![](https://dcbadge.vercel.app/api/server/vUPc7zzpV5)](https://discord.gg/vUPc7zzpV5)

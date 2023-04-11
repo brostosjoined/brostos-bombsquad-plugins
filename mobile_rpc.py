@@ -1,5 +1,6 @@
 # ba_meta require api 7
-token = "paste-your-token here"
+"Made to you by @brostos"
+token = "paste-your-token-here"
 
 from urllib.request import Request, urlopen , urlretrieve
 
@@ -7,7 +8,7 @@ from urllib.request import Request, urlopen , urlretrieve
 def get_module():
     import os 
     import zipfile
-    install_path = f"{os.getcwd}\\lib"
+    install_path = f"{os.getcwd()}\\ba_data\\python" 
     path = f"{install_path}\\websocket.zip"
     if not os.path.exists(f"{install_path}\\websocket"):
         url = "https://github.com/brostosjoined/BombsquadRPC/releases/download/presence-1.0/websocket.zip"

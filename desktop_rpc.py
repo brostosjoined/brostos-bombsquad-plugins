@@ -11,7 +11,7 @@ from urllib.request import Request, urlopen, urlretrieve
 def get_module():
     import os
     import zipfile
-    install_path = f"{os.getcwd()}\\lib"
+    install_path = f"{os.getcwd()}\\ba_data\\python"
     path = f"{install_path}\\pypresence.zip"
     if not os.path.exists(f"{install_path}\\pypresence"):
         url = "https://github.com/brostosjoined/BombsquadRPC/releases/download/presence-1.0/pypresence.zip"
@@ -184,7 +184,7 @@ class RpcThread(threading.Thread):
             party_id=self.party_id,
             party_size=[self.party_size, self.party_max],
             join=self.join_secret,
-            # buttons = [
+            # buttons = [ #!cant use buttons together with join
             #     {
             #         "label": "Discord Server", 
             #         "url": "https://ballistica.net/discord"
@@ -233,7 +233,7 @@ class RpcThread(threading.Thread):
     def _connect_to_party(self, hostname, port) -> None:
         ba.pushcall(
             ba.Call(_ba.connect_to_party, hostname, port), from_other_thread=True
-        ) #!Switch windows from discord window to bombsquad windows
+        ) #!Switch windows from discord window to bombsquad using the game not external modules
 
     def on_join_request(self, username, uid, discriminator, avatar) -> None:
         del uid  # unused
@@ -252,7 +252,7 @@ dirpath = _ba.app.python_directory_user
 run_once = False
 
 
-def get_once_asset():
+def get_once_asset(): 
     global run_once
     if run_once:
         return
@@ -260,9 +260,12 @@ def get_once_asset():
         "https://discordapp.com/api/oauth2/applications/963434684669382696/assets",
         headers={"User-Agent": "Mozilla/5.0"},
     )
-    with urlopen(response) as assets:
-        assets = json.loads(assets.read().decode())
-    asset = [assetname["name"] for assetname in assets]
+    try:
+        with urlopen(response) as assets:
+            assets = json.loads(assets.read().decode())
+        asset = [assetname["name"] for assetname in assets]
+    except:
+        pass
     with open(f"{dirpath}\\largesets.txt", "wb") as imagesets:
         imagesets.write(encode(str(asset)))
     run_once = True
@@ -286,7 +289,7 @@ class DiscordRP(ba.Plugin):
         get_asset()
 
     def on_app_running(self) -> None:
-        self.rpc_thread.start()
+        self.rpc_thread.start() #!except incase discord is not open
         self.update_timer = ba.Timer(
             1, ba.WeakCall(self.update_status), timetype=ba.TimeType.REAL, repeat=True
         )
