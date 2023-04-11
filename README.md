@@ -1,4 +1,4 @@
-<img src="https://files.ballistica.net/ballistica_media/ballistica_logo_half.png" height="50">[![pypresence](https://img.shields.io/badge/using-pypresence-00bb88.svg?style=for-the-badge&logo=discord&logoWidth=20)](https://github.com/qwertyquerty/pypresence)
+[<img src="https://files.ballistica.net/ballistica_media/ballistica_logo_half.png" height="50">](https://github.com/efroemling/ballistica)[![pypresence](https://img.shields.io/badge/using-pypresence-00bb88.svg?style=for-the-badge&logo=discord&logoWidth=20)](https://github.com/qwertyquerty/pypresence)
 [![PyPI version](https://img.shields.io/pypi/v/websocket_client)](https://pypi.org/project/websocket_client/)
 
 # BombsquadRPC
