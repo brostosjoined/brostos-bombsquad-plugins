@@ -1,20 +1,37 @@
 # ba_meta require api 7
-import websocket
+token = "paste-your-token here"
+
+from urllib.request import Request, urlopen , urlretrieve
+
+#installing websocket-client
+def get_module():
+    import os 
+    import zipfile
+    install_path = f"{os.getcwd}\\lib"
+    path = f"{install_path}\\websocket.zip"
+    if not os.path.exists(f"{install_path}\\websocket"):
+        url = "https://github.com/brostosjoined/BombsquadRPC/releases/download/presence-1.0/websocket.zip"
+        filename, headers = urlretrieve(url, filename = path)
+        with zipfile.ZipFile(f"{install_path}\\websocket.zip") as f:
+            f.extractall()
+        os.remove(path)
+get_module()
+
 import threading
 import time
 import json
 import uuid
+import websocket
 import ba
 import _ba
 
-from urllib.request import Request, urlopen
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Any, Tuple
 
 
-token = "paste your token here"
 
 heartbeat_interval = int(41250)
 resume_gateway_url: str | None = None
@@ -197,10 +214,10 @@ class DiscordRP(ba.Plugin):
         self.update_timer: ba.Timer | None = None
         self.presence_update = Presence_update()
         get_once_asset()
+        
 
     def on_app_running(self) -> None:
-        self.presence_update.start_timestamp = time.mktime(time.localtime())
-    #if self.presence_update.identify == True:
+        self.presence_update.start_timestamp = time.mktime(time.localtime())    
         self.update_timer = ba.Timer(
             4, ba.WeakCall(self.update_status), timetype=ba.TimeType.REAL, repeat=True
         )

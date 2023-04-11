@@ -5,7 +5,21 @@
 # ba_meta require api 7
 
 from __future__ import annotations
+from urllib.request import Request, urlopen, urlretrieve
 
+#installing pypresence
+def get_module():
+    import os
+    import zipfile
+    install_path = f"{os.getcwd()}\\lib"
+    path = f"{install_path}\\pypresence.zip"
+    if not os.path.exists(f"{install_path}\\pypresence"):
+        url = "https://github.com/brostosjoined/BombsquadRPC/releases/download/presence-1.0/pypresence.zip"
+        filename, headers = urlretrieve(url, filename = path)
+        with zipfile.ZipFile(f"{install_path}\\pypresence.zip") as f:
+            f.extractall()
+        os.remove(path)
+get_module()
 
 import asyncio
 import ast
@@ -20,7 +34,6 @@ import _ba
 
 from pypresence.utils import get_event_loop
 from pypresence import psutil
-from urllib.request import Request, urlopen
 from codecs import encode
 
 from typing import TYPE_CHECKING
@@ -66,7 +79,7 @@ def _run_overrides() -> None:
 
     _ba.connect_to_party = ba.internal.connect_to_party = new_connect
 
-
+start_time = time.time()
 class RpcThread(threading.Thread):
     def __init__(self):
         super().__init__()
@@ -163,7 +176,7 @@ class RpcThread(threading.Thread):
         data = self.rpc.update(
             state=self.state or "  ",
             details=self.details,
-            start=self.start_timestamp,
+            start=start_time,
             large_image=self.large_image_key,
             large_text=self.large_image_text,
             small_image=self.small_image_key,
