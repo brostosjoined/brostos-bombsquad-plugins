@@ -6,6 +6,10 @@ A mod for the game  Bombsquad to display custom rich presence for mobile and des
 [Join official Discord Bombsquad Server](https://discord.gg/bombsquad-ballistica-official-1001896771347304639)
 
 # Installation
+```diff
+- BEFORE YOU INSTALL MAKE SURE YOU DELETE ALL THE MODS THAT ARE NOT OPEN SOURCE I HEAVILY CONSIDER USING PLUGIN MANAGER AND EBNABLING 2FA FOR YOUR DISCORD ACCOUNT(MOBILE USERS!!!)
+
+```
 For desktop just copy the `desktop_rpc.py `to the mods folder and you are good to go.
 For mobile all you need is a text editor for python or anything else relevant. Open the `mobile_rpc.py` and copy your `discord token` inside the quotes on the token variable. You can get your token [here](https://youtu.be/IVZzyjYyUkc)
 
