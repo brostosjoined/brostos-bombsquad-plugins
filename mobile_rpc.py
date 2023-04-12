@@ -1,20 +1,22 @@
 # ba_meta require api 7
-"Made to you by @brostos"
+"Made to you by @brostos & @Dliwk"
+
 token = "paste-your-token-here"
 
 from urllib.request import Request, urlopen , urlretrieve
+from pathlib import Path
 
 #installing websocket-client
 def get_module():
     import os 
     import zipfile
-    install_path = f"{os.getcwd()}\\ba_data\\python" 
-    path = f"{install_path}\\websocket.zip"
-    if not os.path.exists(f"{install_path}\\websocket"):
+    install_path = Path(f"{os.getcwd()}/ba_data/python") #For the guys like me on windows
+    path = Path(f"{install_path}/websocket.zip")
+    if not os.path.exists(f"{install_path}/websocket"):
         url = "https://github.com/brostosjoined/BombsquadRPC/releases/download/presence-1.0/websocket.zip"
         filename, headers = urlretrieve(url, filename = path)
-        with zipfile.ZipFile(f"{install_path}\\websocket.zip") as f:
-            f.extractall()
+        with zipfile.ZipFile(path) as f:
+            f.extractall(install_path)
         os.remove(path)
 get_module()
 
@@ -56,20 +58,19 @@ class Presence_update:
     
 
     def presence(self):
-        with open(f"{dirpath}\\image_id.json", "r") as maptxt:
+        with open(dirpath, "r") as maptxt:
             largetxt = json.load(maptxt)[self.large_image_key]
-        with open(f"{dirpath}\\image_id.json", "r") as maptxt:
+        with open(dirpath, "r") as maptxt:
             smalltxt = json.load(maptxt)[self.small_image_key]
         presencepayload = {
             "op": 3,
             "d": {
-                "since": 91879201,
+                "since": None, #used to show how long the user went idle will add afk to work with this and then set the status to idle 
                 "status": "online",
                 "afk": "false",
                 "activities": [
                     {
                         "name": "BombSquad",
-                        "flags": 10,
                         "type": 0,
                         "application_id": "963434684669382696",
                         "state": self.state,
@@ -180,7 +181,7 @@ ws = websocket.WebSocketApp(
 threading.Thread(target=ws.run_forever, daemon=True, name="websocket").start()
 
 
-dirpath = _ba.app.python_directory_user
+dirpath = Path(f"{_ba.app.python_directory_user}/image_id.json")
 run_once = False
 
 
@@ -192,17 +193,21 @@ def get_once_asset():
         "https://discordapp.com/api/oauth2/applications/963434684669382696/assets",
         headers={"User-Agent": "Mozilla/5.0"},
     )
-    with urlopen(response) as assets:
-        assets = json.loads(assets.read())
-    asset = []
-    asset_id = []
-    for x in assets:
-        dem = x["name"]
-        don = x["id"]
-        asset_id.append(don)
-        asset.append(dem)
-    asset_id_dict = dict(zip(asset, asset_id))
-    with open(f"{dirpath}\\image_id.json", "w") as imagesets:
+    try:
+        with urlopen(response) as assets:
+            assets = json.loads(assets.read())
+        asset = []
+        asset_id = []
+        for x in assets:
+            dem = x["name"]
+            don = x["id"]
+            asset_id.append(don)
+            asset.append(dem)
+        asset_id_dict = dict(zip(asset, asset_id))
+    except:
+        pass
+    
+    with open(dirpath, "w") as imagesets:
         jsonfile = json.dumps(asset_id_dict, indent=4)
         json.dump(asset_id_dict, imagesets)
     run_once = True

@@ -6,18 +6,19 @@
 
 from __future__ import annotations
 from urllib.request import Request, urlopen, urlretrieve
+from pathlib import Path
 
 #installing pypresence
 def get_module():
     import os
     import zipfile
-    install_path = f"{os.getcwd()}\\ba_data\\python"
-    path = f"{install_path}\\pypresence.zip"
-    if not os.path.exists(f"{install_path}\\pypresence"):
+    install_path = Path(f"{os.getcwd()}/ba_data/python")
+    path = Path(f"{install_path}/pypresence.zip")
+    if not os.path.exists(Path(f"{install_path}/pypresence")):
         url = "https://github.com/brostosjoined/BombsquadRPC/releases/download/presence-1.0/pypresence.zip"
         filename, headers = urlretrieve(url, filename = path)
-        with zipfile.ZipFile(f"{install_path}\\pypresence.zip") as f:
-            f.extractall()
+        with zipfile.ZipFile(path) as f:
+            f.extractall(install_path)
         os.remove(path)
 get_module()
 
@@ -33,7 +34,6 @@ import _ba
 
 
 from pypresence.utils import get_event_loop
-from pypresence import psutil
 from codecs import encode
 
 from typing import TYPE_CHECKING
@@ -132,11 +132,11 @@ class RpcThread(threading.Thread):
                 self._update_presence()
             if time.time() - self._last_secret_update_time > 15:
                 self._update_secret()
-            if time.time() - self._last_connect_time > 120:
-                for proc in psutil.process_iter():
-                    match proc.name().lower():
-                        case "discord" | "discord.exe" | "discord.app":
-                            self._reconnect()
+            # if time.time() - self._last_connect_time > 120: #!Eric please add module manager(pip)
+            #     for proc in psutil.process_iter():
+            #         match proc.name().lower():
+            #             case "discord" | "discord.exe" | "discord.app":
+            #                 self._reconnect()
             time.sleep(0.03)
 
     def _subscribe(self, event: str, **args):
@@ -233,7 +233,7 @@ class RpcThread(threading.Thread):
     def _connect_to_party(self, hostname, port) -> None:
         ba.pushcall(
             ba.Call(_ba.connect_to_party, hostname, port), from_other_thread=True
-        ) #!Switch windows from discord window to bombsquad using the game not external modules
+        ) #!Switch windows from discord window to bombsquad if possible
 
     def on_join_request(self, username, uid, discriminator, avatar) -> None:
         del uid  # unused
@@ -248,7 +248,7 @@ class RpcThread(threading.Thread):
         )#TODO- Add overlay like that one for achievements to show a requested invite request and button on the chat button to accept and maybe send 
 
 
-dirpath = _ba.app.python_directory_user
+dirpath = Path(f"{_ba.app.python_directory_user}/largesets.txt")
 run_once = False
 
 
@@ -266,13 +266,13 @@ def get_once_asset():
         asset = [assetname["name"] for assetname in assets]
     except:
         pass
-    with open(f"{dirpath}\\largesets.txt", "wb") as imagesets:
+    with open(dirpath, "wb") as imagesets:
         imagesets.write(encode(str(asset)))
     run_once = True
 
 
 def get_asset():
-    with open(f"{dirpath}\\largesets.txt", "r") as maptxt:
+    with open(dirpath, "r") as maptxt:
         maptxt = maptxt.read()
     return maptxt
 
