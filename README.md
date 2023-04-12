@@ -2,7 +2,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/websocket_client)](https://pypi.org/project/websocket_client/)
 
 # BombsquadRPC
-A mod for the game  Bombsquad to display custom rich presence for mobile and desktop.Utilizes pypresence for DRPC and websockets for MRPC.
+A mod for the game  Bombsquad to display custom rich presence for mobile and desktop. Utilizes [`pypresence`](https://github.com/qwertyquerty/pypresence) for `desktop_rpc` and [`websocket-client`](https://github.com/websocket-client/websocket-client) for `mobile_rpc`.
 [Join official Discord Bombsquad Server](https://discord.gg/bombsquad-ballistica-official-1001896771347304639)
 
 # Installation
