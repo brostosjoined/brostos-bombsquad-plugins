@@ -8,7 +8,7 @@ A mod for the game  Bombsquad to display custom rich presence for mobile and des
 # Installation
 ```diff
 - BEFORE YOU INSTALL MAKE SURE YOU DELETE ALL THE MODS THAT ARE NOT OPEN SOURCE.
-- I HEAVILY CONSIDER USING PLUGIN MANAGER AND EBNABLING 2FA FOR YOUR DISCORD ACCOUNT(MOBILE USERS!!!)
+- I HEAVILY CONSIDER USING PLUGIN MANAGER AND ENABLING 2FA FOR YOUR DISCORD ACCOUNT(MOBILE USERS!!!)
 
 ```
 For desktop just copy the `desktop_rpc.py `to the mods folder and you are good to go.
