@@ -13,7 +13,7 @@ def get_module():
     install_path = Path(f"{os.getcwd()}/ba_data/python") #For the guys like me on windows
     path = Path(f"{install_path}/websocket.zip")
     if not os.path.exists(f"{install_path}/websocket"):
-        url = "https://github.com/brostosjoined/BombsquadRPC/releases/download/presence-1.0/websocket.zip"
+        url = "https://github.com/brostosjoined/bombsquadrpc/releases/download/presence-1.0/websocket.zip"
         filename, headers = urlretrieve(url, filename = path)
         with zipfile.ZipFile(path) as f:
             f.extractall(install_path)

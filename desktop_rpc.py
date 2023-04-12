@@ -15,7 +15,7 @@ def get_module():
     install_path = Path(f"{os.getcwd()}/ba_data/python")
     path = Path(f"{install_path}/pypresence.zip")
     if not os.path.exists(Path(f"{install_path}/pypresence")):
-        url = "https://github.com/brostosjoined/BombsquadRPC/releases/download/presence-1.0/pypresence.zip"
+        url = "https://github.com/brostosjoined/bombsquadrpc/releases/download/presence-1.0/pypresence.zip"
         filename, headers = urlretrieve(url, filename = path)
         with zipfile.ZipFile(path) as f:
             f.extractall(install_path)
