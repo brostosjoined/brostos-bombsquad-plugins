@@ -264,10 +264,11 @@ def get_once_asset():
         with urlopen(response) as assets:
             assets = json.loads(assets.read().decode())
         asset = [assetname["name"] for assetname in assets]
+    
+        with open(dirpath, "wb") as imagesets:
+            imagesets.write(encode(str(asset)))
     except:
         pass
-    with open(dirpath, "wb") as imagesets:
-        imagesets.write(encode(str(asset)))
     run_once = True
 
 

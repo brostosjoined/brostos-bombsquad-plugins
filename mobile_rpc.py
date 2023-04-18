@@ -204,12 +204,12 @@ def get_once_asset():
             asset_id.append(don)
             asset.append(dem)
         asset_id_dict = dict(zip(asset, asset_id))
+    
+        with open(dirpath, "w") as imagesets:
+            jsonfile = json.dumps(asset_id_dict, indent=4)
+            json.dump(asset_id_dict, imagesets)
     except:
         pass
-    
-    with open(dirpath, "w") as imagesets:
-        jsonfile = json.dumps(asset_id_dict, indent=4)
-        json.dump(asset_id_dict, imagesets)
     run_once = True
 
 
