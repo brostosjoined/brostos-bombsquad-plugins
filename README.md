@@ -12,7 +12,7 @@ A mod for the game  Bombsquad to display custom rich presence for mobile and des
 
 ```
 For desktop just copy the `desktop_rpc.py `to the mods folder and you are good to go.
-For mobile all you need is a text editor for python or anything else relevant. Open the `mobile_rpc.py` and copy your `discord token` inside the quotes on the token variable. You can get your token [here](https://youtu.be/uc7Q0d_HMbg)
+For mobile  you have two options the easy way which is using `discord_richpresence` and login on the plugin manager settings or the hard way which is download  a text editor for python or anything else relevant. Open the `mobile_rpc.py` and copy your `discord token` inside the quotes on the token variable. You can get your token [here](https://youtu.be/uc7Q0d_HMbg)
 
 # Image samples
 ![Discord_vAOpR9SSxh](https://user-images.githubusercontent.com/67740566/231026276-b4d1c494-8e46-4325-ad25-54c69db5c19c.png)  ![ShareX_RcuOF8204k](https://user-images.githubusercontent.com/67740566/231027333-924bd5d2-876c-4fe7-b831-b449012eeac4.png)
