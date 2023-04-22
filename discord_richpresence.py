@@ -593,9 +593,9 @@ class Discordlogin(PopupWindow):
             ba.screenmessage("Login First", (1.00, 0.50, 0.00))
         else:
             if self.consec_press <= 9:
-                # from num2words import num2words
-                # announce = f'announce{num2words(10-self.consec_press).capitalize()}'
-                # ba.playsound(ba.getsound(announce))
+                nwdict = {1:'One', 2:'Two', 3:'Three', 4:'Four', 5:'Five', 6:'Six', 7:'Seven', 8:'Eight', 9:'Nine', 10:'Ten'}
+                announce = f'announce{nwdict[10-self.consec_press]}'
+                ba.playsound(ba.getsound(announce))
                 ba.playsound(ba.getsound('activateBeep'))
                 ba.playsound(ba.getsound('warnBeeps'))
                 ba.screenmessage(
