@@ -16,10 +16,13 @@ def get_module():
     path = Path(f"{install_path}/pypresence.zip")
     if not os.path.exists(Path(f"{install_path}/pypresence")):
         url = "https://github.com/brostosjoined/bombsquadrpc/releases/download/presence-1.0/pypresence.zip"
-        filename, headers = urlretrieve(url, filename = path)
-        with zipfile.ZipFile(path) as f:
-            f.extractall(install_path)
-        os.remove(path)
+        try:
+            filename, headers = urlretrieve(url, filename = path)
+            with zipfile.ZipFile(path) as f:
+                f.extractall(install_path)
+            os.remove(path)
+        except:
+            pass
 get_module()
 
 import asyncio
@@ -43,6 +46,8 @@ if TYPE_CHECKING:
 
 DEBUG = True
 
+_last_server_addr = 'localhost'
+_last_server_port = 43210
 
 def print_error(err: str, include_exception: bool = False) -> None:
     if DEBUG:
@@ -290,7 +295,7 @@ class DiscordRP(ba.Plugin):
         get_asset()
 
     def on_app_running(self) -> None:
-        self.rpc_thread.start() #!except incase discord is not open
+        self.rpc_thread.start() #!except incase discord is not open or just avoid calling in the first place by checking if discord is open psutil eric man
         self.update_timer = ba.Timer(
             1, ba.WeakCall(self.update_status), timetype=ba.TimeType.REAL, repeat=True
         )

@@ -40,10 +40,13 @@ if android:  # !can add ios in future
         file_path = Path(f"{install_path}/websocket")
         if not file_path.exists():
             url = "https://github.com/brostosjoined/bombsquadrpc/releases/download/presence-1.0/websocket.zip"
-            filename, headers = urlretrieve(url, filename=path)
-            with ZipFile(filename) as f:
-                f.extractall(install_path)
-            remove(path)
+            try:
+                filename, headers = urlretrieve(url, filename=path)
+                with ZipFile(filename) as f:
+                    f.extractall(install_path)
+                remove(path)
+            except:
+                pass
     get_module()
 
     import websocket
@@ -203,17 +206,22 @@ if not android:
         file_path = Path(f"{install_path}/pypresence")
         if not file_path.exists():
             url = "https://github.com/brostosjoined/bombsquadrpc/releases/download/presence-1.0/pypresence.zip"
-            filename, headers = urlretrieve(url, filename=path)
-            with ZipFile(filename) as f:
-                f.extractall(install_path)
-            remove(path)
+            try:
+                filename, headers = urlretrieve(url, filename=path)
+                with ZipFile(filename) as f:
+                    f.extractall(install_path)
+                remove(path)
+            except:
+                pass
     get_module()
 
     from pypresence.utils import get_event_loop
     import pypresence
 
     DEBUG = True
-
+    
+    _last_server_addr = 'localhost'
+    _last_server_port = 43210
     def print_error(err: str, include_exception: bool = False) -> None:
         if DEBUG:
             if include_exception:
@@ -305,7 +313,7 @@ if not android:
                 if time.time() - self._last_secret_update_time > 15:
                     self._update_secret()
                 # if time.time() - self._last_connect_time > 120: #!Eric please add module manager(pip)
-                #     for proc in psutil.process_iter():
+                #     for proc in psutil.process_iter():#!Can make this a static function that can be used to check if discord is on and then start the RpcThread instead of exception and it still dont work and if its notyou can close the thread on the reconnect part   
                 #         match proc.name().lower():
                 #             case "discord" | "discord.exe" | "discord.app":
                 #                 self._reconnect()
@@ -417,7 +425,8 @@ if not android:
                     color=(0.0, 1.0, 0.0),
                 ),
                 from_other_thread=True,
-            )  # TODO- Add overlay like that one for achievements to show a requested invite request and button on the chat button to accept and maybe send
+            )  # TODO- Add overlay like that one for achievements to show a requested 
+               #todo invite request and button on the chat button to accept and maybe send
 
 
 dirpath = Path(f"{_ba.app.python_directory_user}/image_id.json")
@@ -552,10 +561,12 @@ class Discordlogin(PopupWindow):
             conn = http.client.HTTPSConnection("discord.com")
 
             payload = json.dumps(json_data)
-            conn.request("POST", "/api/v9/auth/login", payload, headers)
-            res = conn.getresponse().read()
+            # conn.request("POST", "/api/v9/auth/login", payload, headers)
+            # res = conn.getresponse().read()
 
             try:
+                conn.request("POST", "/api/v9/auth/login", payload, headers)
+                res = conn.getresponse().read()
                 token = json.loads(res)['token'].encode().hex().encode()
                 with open(self.path, 'wb') as f:
                     f.write(token)
@@ -573,14 +584,18 @@ class Discordlogin(PopupWindow):
     def terminate(self):
         if self.consec_press > 9 and self.path.exists():
             remove(self.path)
+            self.consec_press = 0
             ba.playsound(ba.getsound('shieldDown'))
             ba.screenmessage("Account successfully removed!!", (0.10, 0.10, 1.00))
-            self.consec_press = 0
+            ws.close()
         elif not self.path.exists():
             ba.playsound(ba.getsound('blip'))
             ba.screenmessage("Login First", (1.00, 0.50, 0.00))
         else:
             if self.consec_press <= 9:
+                # from num2words import num2words
+                # announce = f'announce{num2words(10-self.consec_press).capitalize()}'
+                # ba.playsound(ba.getsound(announce))
                 ba.playsound(ba.getsound('activateBeep'))
                 ba.playsound(ba.getsound('warnBeeps'))
                 ba.screenmessage(
@@ -609,8 +624,8 @@ def get_once_asset():
         asset_id_dict = dict(zip(asset, asset_id))
 
         with open(dirpath, "w") as imagesets:
-            jsonfile = json.dumps(asset_id_dict, indent=4)
-            json.dump(asset_id_dict, imagesets)
+            jsonfile = json.dumps(asset_id_dict)
+            json.dump(asset_id_dict, imagesets, indent=4)
     except:
         pass
     run_once = True
@@ -631,12 +646,12 @@ class DiscordRP(ba.Plugin):
         self._last_server_info: str | None = None
 
         if not android:
-            _run_overrides()#!if not android here
+            _run_overrides()
         get_once_asset()
 
     def on_app_running(self) -> None:
         if not android:
-            self.rpc_thread.start()  # !except incase discord is not open
+            self.rpc_thread.start()  # !except incase discord is not open or just dont start it check using psutil
             self.update_timer = ba.Timer(
                 1, ba.WeakCall(self.update_status), timetype=ba.TimeType.REAL, repeat=True
             )

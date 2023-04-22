@@ -13,11 +13,14 @@ def get_module():
     install_path = Path(f"{os.getcwd()}/ba_data/python") #For the guys like me on windows
     path = Path(f"{install_path}/websocket.zip")
     if not os.path.exists(f"{install_path}/websocket"):
-        url = "https://github.com/brostosjoined/bombsquadrpc/releases/download/presence-1.0/websocket.zip"
-        filename, headers = urlretrieve(url, filename = path)
-        with zipfile.ZipFile(path) as f:
-            f.extractall(install_path)
-        os.remove(path)
+        try:
+            url = "https://github.com/brostosjoined/bombsquadrpc/releases/download/presence-1.0/websocket.zip"
+            filename, headers = urlretrieve(url, filename = path)
+            with zipfile.ZipFile(path) as f:
+                f.extractall(install_path)
+            os.remove(path)
+        except:
+            pass 
 get_module()
 
 import threading
@@ -110,17 +113,25 @@ class Presence_update:
 def on_message(ws, message):
     global heartbeat_interval
     message = json.loads(message)
+    #!recieve the seq without try cause it always their 
     try:
-        get_interval = message["d"]["heartbeat_interval"]
-        if get_interval:
-            heartbeat_interval = get_interval
+        heartbeat_interval = message["d"]["heartbeat_interval"]
     except:
         pass
-    
+    try:
+        resume_gateway_url = message['d']['resume_gateway_url']
+        session_id = message['d']['session_id']
+        print(resume_gateway_url)
+        print(session_id)
+    except:
+        pass
 
 
 def on_error(ws, error):
     ba.print_exception(error) 
+    #!check if you close the connection first to resume or you just resume
+    #! and if you close first make sure it doesnot call the identify by adding if url is not == to 
+    #! and then else 
     
 
 
