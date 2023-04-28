@@ -30,6 +30,7 @@ import ast
 import uuid
 import json
 import pypresence
+import socket
 import time
 import threading
 import ba
@@ -37,6 +38,7 @@ import _ba
 
 
 from pypresence.utils import get_event_loop
+from pypresence import InvalidID,DiscordError
 from codecs import encode
 
 from typing import TYPE_CHECKING
@@ -112,19 +114,22 @@ class RpcThread(threading.Thread):
             addr = _last_server_addr
             port = _last_server_port
         else:
-            with urlopen(
-                "https://legacy.ballistica.net/bsAccessCheck"
-            ) as resp:
-                resp = resp.read().decode()
-            resp = ast.literal_eval(resp)
-            addr = resp["address"]
-            port = 43210
-        secret_dict = {
-            "format_version": 1,
-            "hostname": addr,
-            "port": port,
-        }
-        self.join_secret = json.dumps(secret_dict)
+            try:
+                with urlopen(
+                    "https://legacy.ballistica.net/bsAccessCheck"
+                ) as resp:
+                    resp = resp.read().decode()
+                resp = ast.literal_eval(resp)
+                addr = resp["address"]
+                port = 43210
+                secret_dict = {
+                    "format_version": 1,
+                    "hostname": addr,
+                    "port": port,
+                }
+                self.join_secret = json.dumps(secret_dict)
+            except:
+                pass
 
     def _update_secret(self):
         threading.Thread(target=self._generate_join_secret, daemon=True).start()
@@ -133,15 +138,12 @@ class RpcThread(threading.Thread):
     def run(self) -> None:
         asyncio.set_event_loop(get_event_loop())
         while not self.should_close:
-            if time.time() - self._last_update_time > 0.1:
+            if time.time() - self._last_update_time > 0.1 and start_presence():
                 self._update_presence()
             if time.time() - self._last_secret_update_time > 15:
                 self._update_secret()
-            # if time.time() - self._last_connect_time > 120: #!Eric please add module manager(pip)
-            #     for proc in psutil.process_iter():
-            #         match proc.name().lower():
-            #             case "discord" | "discord.exe" | "discord.app":
-            #                 self._reconnect()
+            # if time.time() - self._last_connect_time > 120 and start_presence(): #!Eric please add module manager(pip)
+            #     self._reconnect()
             time.sleep(0.03)
 
     def _subscribe(self, event: str, **args):
@@ -164,12 +166,20 @@ class RpcThread(threading.Thread):
     def _update_presence(self) -> None:
         self._last_update_time = time.time()
         try:
-            self._do_update_presence()
+            if start_presence():
+                self._do_update_presence()
         except Exception:
             try:
-                self._reconnect()
-            except Exception:
-                print_error("failed to update presence", include_exception=True)
+                if start_presence():
+                    self.rpc.connect()
+            except (InvalidID, DiscordError) as e:
+                if not type(e) in (InvalidID, DiscordError):
+                    print_error("failed to update presence", include_exception= True)
+                else:
+                    self.rpc.close()
+                    if start_presence():
+                        self._reconnect
+                    pass
 
     def _reconnect(self) -> None:
         self.rpc.connect()
@@ -254,12 +264,24 @@ class RpcThread(threading.Thread):
 
 
 dirpath = Path(f"{_ba.app.python_directory_user}/largesets.txt")
-run_once = False
 
-
-def get_once_asset(): 
-    global run_once
-    if run_once:
+def start_presence():
+    #time.sleep(2)
+    for i in range(6463,6473):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.01)
+        try:
+            conn = s.connect_ex(('localhost', i))
+            s.close()
+            if (conn == 0):
+                s.close()
+                return(True)
+        except:
+            s.close()
+            return(False)
+        
+def get_once_asset():
+    if ba.do_once():
         return
     response = Request(
         "https://discordapp.com/api/oauth2/applications/963434684669382696/assets",
@@ -274,7 +296,7 @@ def get_once_asset():
             imagesets.write(encode(str(asset)))
     except:
         pass
-    run_once = True
+    
 
 
 def get_asset():
@@ -282,12 +304,14 @@ def get_asset():
         maptxt = maptxt.read()
     return maptxt
 
-
+if start_presence():
+    Presence = RpcThread()
+    
+    
 # ba_meta export plugin
 class DiscordRP(ba.Plugin):
     def __init__(self) -> None:
         self.update_timer: ba.Timer | None = None
-        self.rpc_thread = RpcThread()
         self._last_server_info : str | None = None
 
         _run_overrides()
@@ -295,13 +319,15 @@ class DiscordRP(ba.Plugin):
         get_asset()
 
     def on_app_running(self) -> None:
-        self.rpc_thread.start() #!except incase discord is not open or just avoid calling in the first place by checking if discord is open psutil eric man
-        self.update_timer = ba.Timer(
-            1, ba.WeakCall(self.update_status), timetype=ba.TimeType.REAL, repeat=True
-        )
+        if start_presence():
+            Presence.start() #!except incase discord is not open or just avoid calling in the first place by checking if discord is open psutil eric man
+            self.update_timer = ba.Timer(
+                1, ba.WeakCall(self.update_status), timetype=ba.TimeType.REAL, repeat=True
+            )
 
     def on_app_shutdown(self) -> None:
-        self.rpc_thread.should_close = True
+        if start_presence():
+            Presence.should_close = True
 
     def _get_current_activity_name(self) -> str | None:
         act = _ba.get_foreground_host_activity()
@@ -327,11 +353,11 @@ class DiscordRP(ba.Plugin):
         if name == "MainMenu":
             name = "Main Menu"
         if name == this:
-            self.rpc_thread.large_image_key = "lobby"
-            self.rpc_thread.large_image_text = "Bombing up"
+            Presence.large_image_key = "lobby"
+            Presence.large_image_text = "Bombing up"
         if name == "Ranking":
-            self.rpc_thread.large_image_key = "ranking"
-            self.rpc_thread.large_image_text = "Viewing Results"
+            Presence.large_image_key = "ranking"
+            Presence.large_image_text = "Viewing Results"
         return name
 
     def _get_current_map_name(self) -> Tuple[str | None, str | None]:
@@ -346,53 +372,53 @@ class DiscordRP(ba.Plugin):
         roster = _ba.get_game_roster()
         connection_info = _ba.get_connection_to_host_info()
 
-        self.rpc_thread.large_image_key = "bombsquadicon"
-        self.rpc_thread.large_image_text = "BombSquad"
-        self.rpc_thread.small_image_key = _ba.app.platform
-        self.rpc_thread.small_image_text = (
+        Presence.large_image_key = "bombsquadicon"
+        Presence.large_image_text = "BombSquad"
+        Presence.small_image_key = _ba.app.platform
+        Presence.small_image_text = (
             f"{_ba.app.platform.capitalize()}({_ba.app.version})"
         )
         connection_info = _ba.get_connection_to_host_info()
         svinfo = str(connection_info)
         if self._last_server_info != svinfo:
             self._last_server_info = svinfo
-            self.rpc_thread.party_id = str(uuid.uuid4())
-            self.rpc_thread._update_secret()
+            Presence.party_id = str(uuid.uuid4())
+            Presence._update_secret()
         if connection_info != {}:
             servername = connection_info["name"]
-            self.rpc_thread.details = "Online"
-            self.rpc_thread.party_size = max(
+            Presence.details = "Online"
+            Presence.party_size = max(
                 1, sum(len(client["players"]) for client in roster)
             )
-            self.rpc_thread.party_max = max(8, self.rpc_thread.party_size)
+            Presence.party_max = max(8, Presence.party_size)
             if len(servername) == 19 and "Private Party" in servername:
-                self.rpc_thread.state = "Private Party"
+                Presence.state = "Private Party"
             elif servername == "":  # A local game joinable from the internet
                 try:
                     offlinename = json.loads(_ba.get_game_roster()[0]["spec_string"])[
                         "n"
                     ]
                     if len(offlinename > 19):
-                        self.rpc_thread.state = offlinename[slice(19)] + "..."
+                        Presence.state = offlinename[slice(19)] + "..."
                     else:
-                        self.rpc_thread.state = offlinename
+                        Presence.state = offlinename
                 except IndexError:
                     pass
             else:
                 if len(servername) > 19:
-                    self.rpc_thread.state = servername[slice(19)] + ".."
+                    Presence.state = servername[slice(19)] + ".."
                 else:
-                    self.rpc_thread.state = servername[slice(19)]
+                    Presence.state = servername[slice(19)]
 
         if connection_info == {}:
-            self.rpc_thread.details = "Local"
-            self.rpc_thread.state = self._get_current_activity_name()
-            self.rpc_thread.party_size = max(1, len(roster))
-            self.rpc_thread.party_max = max(1, _ba.get_public_party_max_size())
+            Presence.details = "Local"
+            Presence.state = self._get_current_activity_name()
+            Presence.party_size = max(1, len(roster))
+            Presence.party_max = max(1, _ba.get_public_party_max_size())
 
             if (
                 _ba.get_foreground_host_session() is not None
-                and self.rpc_thread.details == "Local"
+                and Presence.details == "Local"
             ):
                 session = (
                     _ba.get_foreground_host_session()
@@ -402,13 +428,13 @@ class DiscordRP(ba.Plugin):
                     .replace("DualTeamSession", ": Teams")
                     .replace("CoopSession", ": Coop")
                 )
-                self.rpc_thread.details = f"{self.rpc_thread.details} {session}"
+                Presence.details = f"{Presence.details} {session}"
             if (
-                self.rpc_thread.state == "NoneType"
+                Presence.state == "NoneType"
             ):  # sometimes the game just breaks which means its not really watching replay FIXME
-                self.rpc_thread.state = "Watching Replay"
-                self.rpc_thread.large_image_key = "replay"
-                self.rpc_thread.large_image_text = "Viewing Awesomeness"
+                Presence.state = "Watching Replay"
+                Presence.large_image_key = "replay"
+                Presence.large_image_text = "Viewing Awesomeness"
 
             act = _ba.get_foreground_host_activity()
             session = _ba.get_foreground_host_session()
@@ -419,21 +445,21 @@ class DiscordRP(ba.Plugin):
 
                 # noinspection PyUnresolvedReferences,PyProtectedMember
                 try:
-                    self.rpc_thread.start_timestamp = act._discordrp_start_time  # type: ignore
+                    Presence.start_timestamp = act._discordrp_start_time  # type: ignore
                 except AttributeError:
                     # This can be the case if plugin launched AFTER activity
                     # has been created; in that case let's assume it was
                     # created just now.
-                    self.rpc_thread.start_timestamp = act._discordrp_start_time = time.mktime(  # type: ignore
+                    Presence.start_timestamp = act._discordrp_start_time = time.mktime(  # type: ignore
                         time.localtime()
                     )
                 if isinstance(act, EliminationGame):
                     alive_count = len([p for p in act.players if p.lives > 0])
-                    self.rpc_thread.details += f" ({alive_count} players left)"
+                    Presence.details += f" ({alive_count} players left)"
                 elif isinstance(act, TheLastStandGame):
                     # noinspection PyProtectedMember
                     points = act._score
-                    self.rpc_thread.details += f" ({points} points)"
+                    Presence.details += f" ({points} points)"
                 elif isinstance(act, MeteorShowerGame):
                     with ba.Context(act):
                         sec = ba.time() - act._timer.getstarttime()
@@ -442,25 +468,25 @@ class DiscordRP(ba.Plugin):
                         secfmt = f"{sec:.2f}"
                     else:
                         secfmt = f"{int(sec) // 60:02}:{sec:.2f}"
-                    self.rpc_thread.details += f" ({secfmt})"
+                    Presence.details += f" ({secfmt})"
 
                 # if isinstance(session, ba.DualTeamSession):
                 #     scores = ':'.join([
                 #         str(t.customdata['score'])
                 #         for t in session.sessionteams
                 #     ])
-                #     self.rpc_thread.details += f' ({scores})'
+                #     Presence.details += f' ({scores})'
 
             mapname, short_map_name = self._get_current_map_name()
             if mapname:
                 if short_map_name in get_asset():
-                    self.rpc_thread.large_image_text = mapname
-                    self.rpc_thread.large_image_key = short_map_name
-                    self.rpc_thread.small_image_key = "bombsquadlogo2"
-                    self.rpc_thread.small_image_text = "BombSquad"
+                    Presence.large_image_text = mapname
+                    Presence.large_image_key = short_map_name
+                    Presence.small_image_key = "bombsquadlogo2"
+                    Presence.small_image_text = "BombSquad"
 
         if _ba.get_idle_time() / (1000 * 60) % 60 >= 0.2:
-            self.rpc_thread.details = f"AFK in {self.rpc_thread.details}"
-            self.rpc_thread.large_image_key = (
+            Presence.details = f"AFK in {Presence.details}"
+            Presence.large_image_key = (
                 "https://media.tenor.com/uAqNn6fv7x4AAAAM/bombsquad-spaz.gif"
             )

@@ -11,7 +11,7 @@ from urllib.request import Request, urlopen, urlretrieve
 from pathlib import Path
 from os import getcwd, remove
 from zipfile import ZipFile
-from bastd.ui.popup import PopupWindow
+from bastd.ui.popup import PopupWindow 
 
 import asyncio
 import http.client
@@ -129,12 +129,15 @@ if android:  # !can add ios in future
             ws.send(json.dumps(presencepayload))
 
     def on_message(ws, message):
-        global heartbeat_interval
+        global heartbeat_interval, resume_gateway_url, session_id
         message = json.loads(message)
         try:
-            get_interval = message["d"]["heartbeat_interval"]
-            if get_interval:
-                heartbeat_interval = get_interval
+            heartbeat_interval = message["d"]["heartbeat_interval"]
+        except:
+            pass
+        try:
+            resume_gateway_url = message["d"]["resume_gateway_url"]
+            session_id = message["d"]["session_id"]
         except:
             pass
 
@@ -151,14 +154,12 @@ if android:  # !can add ios in future
         def heartbeats():
             """Sending heartbeats to keep the connection alive"""
             global heartbeat_interval
-            runonce = True
-            while runonce:
+            if ba.do_once():
                 heartbeat_payload = {
                     "op": 1,
                     "d": 251,
                 }  # step two keeping connection alive by sending heart beats and receiving opcode 11
                 ws.send(json.dumps(heartbeat_payload))
-                runonce = False
 
                 def identify():
                     """Identifying to the gateway and enable by using user token and the intents we will be using e.g 256->For Presence"""
@@ -178,7 +179,7 @@ if android:  # !can add ios in future
                     }  # step 3 send an identify
                     ws.send(json.dumps(identify_payload))
                 identify()
-            while not runonce:
+            while True:
                 heartbeat_payload = {"op": 1, "d": heartbeat_interval}
                 ws.send(json.dumps(heartbeat_payload))
                 time.sleep(heartbeat_interval / 1000)
@@ -216,7 +217,9 @@ if not android:
     get_module()
 
     from pypresence.utils import get_event_loop
-    import pypresence
+    from pypresence import InvalidID, DiscordError
+    import pypresence 
+    import socket
 
     DEBUG = True
     
@@ -312,11 +315,8 @@ if not android:
                     self._update_presence()
                 if time.time() - self._last_secret_update_time > 15:
                     self._update_secret()
-                # if time.time() - self._last_connect_time > 120: #!Eric please add module manager(pip)
-                #     for proc in psutil.process_iter():#!Can make this a static function that can be used to check if discord is on and then start the RpcThread instead of exception and it still dont work and if its notyou can close the thread on the reconnect part   
-                #         match proc.name().lower():
-                #             case "discord" | "discord.exe" | "discord.app":
-                #                 self._reconnect()
+                # if time.time() - self._last_connect_time > 120 and start_presence(): #!Eric please add module manager(pip)
+                #     self._reconnect()
                 time.sleep(0.03)
 
         def _subscribe(self, event: str, **args):
@@ -339,12 +339,20 @@ if not android:
         def _update_presence(self) -> None:
             self._last_update_time = time.time()
             try:
-                self._do_update_presence()
+                if start_presence():
+                    self._do_update_presence()
             except Exception:
                 try:
-                    self._reconnect()
-                except Exception:
-                    print_error("failed to update presence", include_exception=True)
+                    if start_presence():
+                        self.rpc.connect()
+                except (InvalidID, DiscordError) as e:
+                    if not type(e) in (InvalidID, DiscordError):
+                        print_error("failed to update presence", include_exception= True)
+                    else:
+                        self.rpc.close()
+                        if start_presence():
+                            self._reconnect
+                        pass
 
         def _reconnect(self) -> None:
             self.rpc.connect()
@@ -430,7 +438,6 @@ if not android:
 
 
 dirpath = Path(f"{_ba.app.python_directory_user}/image_id.json")
-run_once = False
 
 
 class Discordlogin(PopupWindow):
@@ -602,10 +609,23 @@ class Discordlogin(PopupWindow):
                     f"You are {10-self.consec_press} steps from terminating your account", (0.50, 0.25, 1.00))
                 self.consec_press += 1
 
-
+def start_presence():
+    #time.sleep(2)
+    for i in range(6463,6473):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.01)
+        try:
+            conn = s.connect_ex(('localhost', i))
+            s.close()
+            if (conn == 0):
+                s.close()
+                return(True)
+        except:
+            s.close()
+            return(False)
+        
 def get_once_asset():
-    global run_once
-    if run_once:
+    if ba.do_once():
         return
     response = Request(
         "https://discordapp.com/api/oauth2/applications/963434684669382696/assets",
@@ -628,13 +648,12 @@ def get_once_asset():
             json.dump(asset_id_dict, imagesets, indent=4)
     except:
         pass
-    run_once = True
 
 
 def get_class():
     if android:
         return PresenceUpdate()
-    elif not android:
+    elif not android and start_presence():
         return RpcThread()
 
 
@@ -650,8 +669,8 @@ class DiscordRP(ba.Plugin):
         get_once_asset()
 
     def on_app_running(self) -> None:
-        if not android:
-            self.rpc_thread.start()  # !except incase discord is not open or just dont start it check using psutil
+        if not android and start_presence():
+            self.rpc_thread.start()  
             self.update_timer = ba.Timer(
                 1, ba.WeakCall(self.update_status), timetype=ba.TimeType.REAL, repeat=True
             )
@@ -664,14 +683,15 @@ class DiscordRP(ba.Plugin):
         return True
 
     def show_settings_ui(self, button):
-        if not android:
+        if not android and start_presence():
             ba.screenmessage("Nothing here achievement!!!", (0.26, 0.65, 0.94))
             ba.playsound(ba.getsound('achievement'))
         else:
             Discordlogin()
 
     def on_app_shutdown(self) -> None:
-        if not android:
+        if not android and start_presence():
+            self.rpc_thread.rpc.close()
             self.rpc_thread.should_close = True
         else:
             ws.close()
