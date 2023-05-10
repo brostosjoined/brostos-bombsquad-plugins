@@ -6,8 +6,17 @@ A mod for the game  Bombsquad to display custom rich presence for mobile and des
 [Join official Discord Bombsquad Server](https://discord.gg/bombsquad-ballistica-official-1001896771347304639)
 
 # Installation
+
+```
+Asking users to share a user token is forbidden by our Developer Policy and may result in action taken against your app and/or account. Please don't take that approach.
+ 
+We may someday have other ways of setting presence on mobile, but for now it's really just the one method, which the game developers will need to pursue themselves if interested.
+ 
+Thanks,
+Shipwreck
+``` 
 ```diff
-- BEFORE YOU INSTALL MAKE SURE YOU DELETE ALL THE MODS THAT ARE NOT OPEN SOURCE.
+- IF YOU ARE WANT TO GET EXPERIMENTAL EVEN AFTER THAT.
 - I HEAVILY CONSIDER USING PLUGIN MANAGER AND ENABLING 2FA FOR YOUR DISCORD ACCOUNT(MOBILE USERS!!!)
 
 ```
