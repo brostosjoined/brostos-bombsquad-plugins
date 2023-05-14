@@ -485,7 +485,7 @@ class DiscordRP(ba.Plugin):
                     Presence.small_image_key = "bombsquadlogo2"
                     Presence.small_image_text = "BombSquad"
 
-        if _ba.get_idle_time() / (1000 * 60) % 60 >= 0.2:
+        if _ba.get_idle_time() / (1000 * 60) % 60 >= 0.4:
             Presence.details = f"AFK in {Presence.details}"
             Presence.large_image_key = (
                 "https://media.tenor.com/uAqNn6fv7x4AAAAM/bombsquad-spaz.gif"

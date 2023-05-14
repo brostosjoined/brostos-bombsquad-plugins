@@ -858,7 +858,7 @@ class DiscordRP(ba.Plugin):
                     self.rpc_thread.small_image_key = 'bombsquadlogo2'
                     self.rpc_thread.small_image_text = 'BombSquad'
 
-        if _ba.get_idle_time() / (1000 * 60) % 60 >= 0.2:
+        if _ba.get_idle_time() / (1000 * 60) % 60 >= 0.4:
             self.rpc_thread.details = f"AFK in {self.rpc_thread.details}"
             if not android:
                 self.rpc_thread.large_image_key = (
