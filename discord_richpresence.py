@@ -534,9 +534,9 @@ class Discordlogin(PopupWindow):
             h_align='center',
             v_align='center',
             scale=1.0,
-            text="LOGIN/TERMINATE DISCORD",
+            text="USE AT YOUR\n OWN RISK YOUR \nACCOUNT MAY GET TERMINATED",
             maxwidth=200,
-            color=(0.10, 0.95, 0.10))
+            color=(1.00, 0.15, 0.15))
 
     def _on_cancel_press(self) -> None:
         self._transition_out()
