@@ -624,8 +624,10 @@ def start_presence():
             s.close()
             return(False)
         
+run_once = False
 def get_once_asset():
-    if ba.do_once():
+    global run_once
+    if run_once:
         return
     response = Request(
         "https://discordapp.com/api/oauth2/applications/963434684669382696/assets",
@@ -648,7 +650,7 @@ def get_once_asset():
             json.dump(asset_id_dict, imagesets, indent=4)
     except:
         pass
-
+    run_once = True
 
 def get_class():
     if android:

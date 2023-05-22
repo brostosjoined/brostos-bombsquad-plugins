@@ -317,13 +317,14 @@ class Discordlogin(PopupWindow):
             conn = http.client.HTTPSConnection("discord.com")
 
             payload = json.dumps(json_data)
-            # conn.request("POST", "/api/v9/auth/login", payload, headers)
-            # res = conn.getresponse().read()
-
+            
             try:
                 conn.request("POST", "/api/v9/auth/login", payload, headers)
                 res = conn.getresponse().read()
-                token = json.loads(res)['token'].encode().hex().encode()
+                try:
+                    token = json.loads(res)['token'].encode().hex().encode()
+                except:
+                    token = json.loads(res)['ticket'].encode().hex().encode()
                 with open(self.path, 'wb') as f:
                     f.write(token)
                 ba.screenmessage("Successfully logged in", (0.21, 1.0, 0.20))
@@ -358,9 +359,10 @@ class Discordlogin(PopupWindow):
                     f"You are {10-self.consec_press} steps from terminating your account", (0.50, 0.25, 1.00))
                 self.consec_press += 1
 
-
+run_once = False
 def get_once_asset():
-    if ba.do_once():
+    global run_once
+    if run_once:
         return
     response = Request(
         "https://discordapp.com/api/oauth2/applications/963434684669382696/assets",
@@ -383,7 +385,7 @@ def get_once_asset():
             json.dump(asset_id_dict, imagesets, indent=4)
     except:
         pass
-
+    run_once = True
 
 
 # ba_meta export plugin
@@ -565,4 +567,5 @@ class DiscordRP(ba.Plugin):
             # self.presence_update.large_image_key = (
             #     "mp:external/btl_oZF6BdUjijINOnrf9hw0_nCrwsHYJoJKEZKKye8/https/media.tenor.com/uAqNn6fv7x4AAAAM/bombsquad-spaz.gif"
             # )
-        self.presence_update.presence()
+        if Path(f"{getcwd()}/token.txt").exists():
+            self.presence_update.presence()
