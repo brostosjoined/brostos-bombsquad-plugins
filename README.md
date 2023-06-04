@@ -2,7 +2,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/websocket_client)](https://pypi.org/project/websocket_client/)
 
 # BombsquadRPC
-A mod for the game  Bombsquad to display custom rich presence for mobile and desktop. Utilizes [`pypresence`](https://github.com/qwertyquerty/pypresence) for `desktop_rpc` and [`websocket-client`](https://github.com/websocket-client/websocket-client) for `mobile_rpc`.
+A mod for the game  Bombsquad to display custom rich presence for mobile and desktop. Utilizes [`pypresence`](https://github.com/qwertyquerty/pypresence) and [`websocket-client`](https://github.com/websocket-client/websocket-client).
 [Join official Discord Bombsquad Server](https://discord.gg/bombsquad-ballistica-official-1001896771347304639)
 
 # Installation
@@ -20,8 +20,6 @@ Shipwreck
 - I HEAVILY CONSIDER USING PLUGIN MANAGER AND ENABLING 2FA FOR YOUR DISCORD ACCOUNT(MOBILE USERS!!!)
 
 ```
-For desktop just copy the `desktop_rpc.py `to the mods folder and you are good to go.
-For mobile download `mobile_rpc.py` and move it to the mods folder then go to`Settings->Advanced->Plugins->Settings` Find the mobile_rpc settings then just login.
 
 # Image samples
 ![Discord_vAOpR9SSxh](https://user-images.githubusercontent.com/67740566/231026276-b4d1c494-8e46-4325-ad25-54c69db5c19c.png)  ![ShareX_RcuOF8204k](https://user-images.githubusercontent.com/67740566/231027333-924bd5d2-876c-4fe7-b831-b449012eeac4.png)

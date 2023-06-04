@@ -75,12 +75,7 @@ if android:  # !can add ios in future
 
         def presence(self):
             with open(dirpath, "r") as maptxt:
-                #!if self.large_image_key != "https://media.tenor.com/uAqNn6fv7x4AAAAM/bombsquad-spaz.gif":
                 largetxt = json.load(maptxt)[self.large_image_key]
-                    #!"mp:external/btl_oZF6BdUjijINOnrf9hw0_nCrwsHYJoJKEZKKye8/https/media.tenor.com/uAqNn6fv7x4AAAAM/bombsquad-spaz.gif"
-                # else: #!some junk here
-                #     self.media_proxy = "mp:external/btl_oZF6BdUjijINOnrf9hw0_nCrwsHYJoJKEZKKye8{}"
-                #     self.large_image_key = '/https/media.tenor.com/uAqNn6fv7x4AAAAM/bombsquad-spaz.gif'
             with open(dirpath, "r") as maptxt:
                 smalltxt = json.load(maptxt)[self.small_image_key]
 
@@ -225,6 +220,7 @@ if not android:
     
     _last_server_addr = 'localhost'
     _last_server_port = 43210
+    
     def print_error(err: str, include_exception: bool = False) -> None:
         if DEBUG:
             if include_exception:
@@ -336,7 +332,7 @@ if not android:
             self._subscribe("ACTIVITY_JOIN")
             self._subscribe("ACTIVITY_JOIN_REQUEST")
 
-        def _update_presence(self) -> None:
+        def _update_presence(self) -> None: #! update this function when latest pypresence releases
             self._last_update_time = time.time()
             try:
                 if start_presence():
@@ -421,7 +417,7 @@ if not android:
         def _connect_to_party(self, hostname, port) -> None:
             ba.pushcall(
                 ba.Call(_ba.connect_to_party, hostname, port), from_other_thread=True
-            )  # !Switch windows from discord window to bombsquad if possible
+            )  
 
         def on_join_request(self, username, uid, discriminator, avatar) -> None:
             del uid  # unused
@@ -433,8 +429,7 @@ if not android:
                     color=(0.0, 1.0, 0.0),
                 ),
                 from_other_thread=True,
-            )  # TODO- Add overlay like that one for achievements to show a requested 
-               #todo invite request and button on the chat button to accept and maybe send
+            )  
 
 
 dirpath = Path(f"{_ba.app.python_directory_user}/image_id.json")
@@ -444,20 +439,27 @@ class Discordlogin(PopupWindow):
 
     def __init__(self):
         # pylint: disable=too-many-locals
-        uiscale = ba.app.ui.uiscale
+        _uiscale = ba.app.ui.uiscale
         self._transitioning_out = False
-        self._width = 400
-        self._height = 420
-        self.consec_press = 0
+        s = 1.25 if _uiscale is ba.UIScale.SMALL else 1.27 if _uiscale is ba.UIScale.MEDIUM else 1.3
+        self._width = 380 * s
+        self._height = 150 + 150 * s
         self.path = Path(f"{getcwd()}/token.txt")
         bg_color = (0.5, 0.4, 0.6)
+        log_btn_colour = (0.10, 0.95, 0.10) if not self.path.exists() else (1.00, 0.15, 0.15)
+        log_txt = "LOG IN" if not self.path.exists() else  "LOG OUT"
+            
+        
+        
 
         # creates our _root_widget
         PopupWindow.__init__(self,
                              position=(0.0, 0.0),
                              size=(self._width, self._height),
-                             scale=1.2,
+                             scale=(2.1 if _uiscale is ba.UIScale.SMALL else 1.5
+                                    if _uiscale is ba.UIScale.MEDIUM else 1.0),
                              bg_color=bg_color)
+                             
 
         self._cancel_button = ba.buttonwidget(
             parent=self.root_widget,
@@ -470,73 +472,76 @@ class Discordlogin(PopupWindow):
             autoselect=True,
             icon=ba.gettexture('crossOut'),
             iconscale=1.2)
-
-        self.terminate_button = ba.buttonwidget(parent=self.root_widget,
-                                                position=(135, 250),
-                                                size=(135, 90),
-                                                on_activate_call=self.terminate,
-                                                textcolor=(0.8, 0.8, 0.85),
-                                                # (1.00, 0.15, 0.15)red
-                                                color=(0.525, 0.595, 1.458),
-                                                button_type='square',
-                                                text_scale=1,
-                                                label="")
-
+            
+        
+        
         ba.imagewidget(parent=self.root_widget,
-                       position=(143, 250),
-                       size=(115, 90),
+                       position=(180, self._height - 55),
+                       size=(32 * s, 32 * s),
                        texture=ba.gettexture("discordLogo"),
-                       color=(10 - 0.32, 10 - 0.39, 10 - 0.96),
-                       draw_controller=self.terminate_button)
+                       color=(10 - 0.32, 10 - 0.39, 10 - 0.96))
+        
 
+        
         self.email_widget = ba.textwidget(parent=self.root_widget,
-                                          text="email",
-                                          size=(360, 70),
-                                          position=(35, 180),
-                                          h_align='left',
-                                          v_align='center',
-                                          editable=True,
-                                          scale=0.8,
-                                          autoselect=True,
-                                          maxwidth=220,)
-        # description='Username')
-
+                                            text="Email/Phone Number",
+                                            size=(400, 70),
+                                            position=(50, 180),
+                                            h_align='left',
+                                            v_align='center',
+                                            editable=True,
+                                            scale=0.8,
+                                            autoselect=True,
+                                            maxwidth=220)
+                                            
+        
         self.password_widget = ba.textwidget(parent=self.root_widget,
-                                             text="password",
-                                             size=(250, 70),
-                                             position=(44, 120),
-                                             h_align='left',
-                                             v_align='center',
-                                             editable=True,
-                                             scale=0.8,
-                                             autoselect=True,
-                                             maxwidth=220,)
-        # description='Username')
-
+                                            text="Password",
+                                            size=(400, 70),
+                                            position=(50, 120),
+                                            h_align='left',
+                                            v_align='center',
+                                            editable=True,
+                                            scale=0.8,
+                                            autoselect=True,
+                                            maxwidth=220)
+                                            
+        
         ba.containerwidget(edit=self.root_widget,
                            cancel_button=self._cancel_button)
-        self._login_button = ba.buttonwidget(
-            parent=self.root_widget,
-            position=(150, 65),
-            size=(160, 90),
-            scale=0.58,
-            label='Login',
-            color=(0.10, 0.95, 0.10),
-            on_activate_call=self.login,
-            autoselect=True,)
-        # icon=ba.gettexture('crossOut'),
-        # iconscale=1.2)
-
+                           
         ba.textwidget(
             parent=self.root_widget,
-            position=(self._width * 0.5, self._height - 30),
+            position=(265, self._height - 37),
             size=(0, 0),
             h_align='center',
             v_align='center',
             scale=1.0,
-            text="USE AT YOUR\n OWN RISK YOUR \nACCOUNT MAY GET TERMINATED",
+            text="Discord",
+            maxwidth=200,
+            color=(0.10, 0.95, 0.10)
+            
+        ba.textwidget(
+            parent=self.root_widget,
+            position=(265, self._height - 78),
+            size=(0, 0),
+            h_align='center',
+            v_align='center',
+            scale=1.0,
+            text="Use at your own risk\n discord account might get terminated",
             maxwidth=200,
             color=(1.00, 0.15, 0.15))
+        
+                           
+        self._login_button = ba.buttonwidget(
+            parent=self.root_widget,
+            position=(120, 65),
+            size=(400, 80),
+            scale=0.58,
+            label=log_txt,
+            color=log_btn_colour,
+            on_activate_call=self.login,
+            autoselect=True)
 
     def _on_cancel_press(self) -> None:
         self._transition_out()
@@ -585,32 +590,14 @@ class Discordlogin(PopupWindow):
 
             conn.close()
         else:
-            ba.screenmessage("Already logged in", (0.10, 0.35, 0.10))
-            ba.playsound(ba.getsound('block'))
-
-    def terminate(self):
-        if self.consec_press > 9 and self.path.exists():
             remove(self.path)
-            self.consec_press = 0
             ba.playsound(ba.getsound('shieldDown'))
             ba.screenmessage("Account successfully removed!!", (0.10, 0.10, 1.00))
             ws.close()
-        elif not self.path.exists():
-            ba.playsound(ba.getsound('blip'))
-            ba.screenmessage("Login First", (1.00, 0.50, 0.00))
-        else:
-            if self.consec_press <= 9:
-                nwdict = {1:'One', 2:'Two', 3:'Three', 4:'Four', 5:'Five', 6:'Six', 7:'Seven', 8:'Eight', 9:'Nine', 10:'Ten'}
-                announce = f'announce{nwdict[10-self.consec_press]}'
-                ba.playsound(ba.getsound(announce))
-                ba.playsound(ba.getsound('activateBeep'))
-                ba.playsound(ba.getsound('warnBeeps'))
-                ba.screenmessage(
-                    f"You are {10-self.consec_press} steps from terminating your account", (0.50, 0.25, 1.00))
-                self.consec_press += 1
+
+    
 
 def start_presence():
-    #time.sleep(2)
     for i in range(6463,6473):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(0.01)
@@ -702,6 +689,7 @@ class DiscordRP(ba.Plugin):
         act = _ba.get_foreground_host_activity()
         if isinstance(act, ba.GameActivity):
             return act.name
+            
         this = "Lobby"
         name: str | None = (
             act.__class__.__name__.replace("Activity", "")
@@ -782,7 +770,7 @@ class DiscordRP(ba.Plugin):
                     self.rpc_thread.state = servername[slice(19)]
 
         if connection_info == {}:
-            self.rpc_thread.details = "Local"
+            self.rpc_thread.details = "Local" #! replace with something like ballistica github cause  
             self.rpc_thread.state = self._get_current_activity_name()
             self.rpc_thread.party_size = max(1, len(roster))
             self.rpc_thread.party_max = max(1, _ba.get_public_party_max_size())
@@ -795,7 +783,7 @@ class DiscordRP(ba.Plugin):
                     _ba.get_foreground_host_session()
                     .__class__.__name__.replace("MainMenuSession", "")
                     .replace("EndSession", "")
-                    .replace("FreeForAllSession", ": FFA")
+                    .replace("FreeForAllSession", ": FFA") #! for session use small image key
                     .replace("DualTeamSession", ": Teams")
                     .replace("CoopSession", ": Coop")
                 )
