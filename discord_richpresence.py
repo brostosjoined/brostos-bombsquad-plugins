@@ -529,7 +529,7 @@ class Discordlogin(PopupWindow):
             scale=1.0,
             text="Discord",
             maxwidth=200,
-            color=(0.10, 0.95, 0.10))
+            color=(0.80, 0.80, 0.80))
             
         ba.textwidget(
             parent=self.root_widget,
