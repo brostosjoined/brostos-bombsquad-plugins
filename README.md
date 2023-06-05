@@ -5,7 +5,7 @@
 A mod for the game  Bombsquad to display custom rich presence for mobile and desktop. Utilizes [`pypresence`](https://github.com/qwertyquerty/pypresence) and [`websocket-client`](https://github.com/websocket-client/websocket-client).
 [Join official Discord Bombsquad Server](https://discord.gg/bombsquad-ballistica-official-1001896771347304639)
 
-# Installation
+# 💀WARNING💀
 
 ```
 Asking users to share a user token is forbidden by our Developer Policy and may result in action taken against your app and/or account. Please don't take that approach.
@@ -16,9 +16,7 @@ Thanks,
 Shipwreck
 ``` 
 ```diff
-- IF YOU ARE WANT TO GET EXPERIMENTAL EVEN AFTER THAT.
-- I HEAVILY CONSIDER USING PLUGIN MANAGER AND DISABLE 2FA, LOGIN THEN ENABLE IF YOU WANT 2FA FOR YOUR DISCORD ACCOUNT(MOBILE USERS!!!)
-
+- FROM NOW AND ONWARDS DOWNLOAD MODS FROM PLUGIN MANAGER AND OPEN SOURCED ONES
 ```
 
 # Image samples
@@ -32,3 +30,7 @@ Shipwreck
 If you would like custom rpc for android I consider checking out Kizzy a really great app.
 
 [![](https://dcbadge.vercel.app/api/server/vUPc7zzpV5)](https://discord.gg/vUPc7zzpV5)
+
+# Credits
+- [Dliwk](https://github.com/Dliwk)
+- [Vaibhav](https://github.com/dead8309)
