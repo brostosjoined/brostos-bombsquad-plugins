@@ -29,9 +29,10 @@ if TYPE_CHECKING:
     from typing import Any, Tuple
 
 
-android = ba.app.platform == "android"
+ANDROID = ba.app.platform == "android"
+DIRPATH = Path(f"{_ba.app.python_directory_user}/image_id.json")
 
-if android:  # !can add ios in future
+if ANDROID:  # !can add ios in future
 
     # Installing websocket
     def get_module():
@@ -74,9 +75,9 @@ if android:  # !can add ios in future
             self.party_max = 8
 
         def presence(self):
-            with open(dirpath, "r") as maptxt:
+            with open(DIRPATH, "r") as maptxt:
                 largetxt = json.load(maptxt)[self.large_image_key]
-            with open(dirpath, "r") as maptxt:
+            with open(DIRPATH, "r") as maptxt:
                 smalltxt = json.load(maptxt)[self.small_image_key]
 
             presencepayload = {
@@ -193,7 +194,7 @@ if android:  # !can add ios in future
         threading.Thread(target=ws.run_forever, daemon=True, name="websocket").start()
 
 
-if not android:
+if not ANDROID:
 
     # installing pypresence
     def get_module():
@@ -212,10 +213,10 @@ if not android:
     get_module()
 
     from pypresence.utils import get_event_loop
-    from pypresence import InvalidID, DiscordError
+    from pypresence import PipeClosed, DiscordError
     import pypresence 
     import socket
-
+    
     DEBUG = True
     
     _last_server_addr = 'localhost'
@@ -258,7 +259,7 @@ if not android:
 
     class RpcThread(threading.Thread):
         def __init__(self):
-            super().__init__()
+            super().__init__(name="RpcThread")
             self.rpc = pypresence.Presence(963434684669382696)
             self.state: str | None = "In Game"
             self.details: str | None = "Main Menu"
@@ -275,7 +276,22 @@ if not android:
             self._last_secret_update_time: float = 0
             self._last_connect_time: float = 0
             self.should_close = False
-
+        
+        @staticmethod 
+        def is_discord_running():
+            for i in range(6463,6473):
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(0.01)
+                try:
+                    conn = s.connect_ex(('localhost', i))
+                    s.close()
+                    if (conn == 0):
+                        s.close()
+                        return(True)
+                except:
+                    s.close()
+                    return(False)
+        
         def _generate_join_secret(self):
             # resp = requests.get('https://legacy.ballistica.net/bsAccessCheck').text
             connection_info = _ba.get_connection_to_host_info()
@@ -311,7 +327,7 @@ if not android:
                     self._update_presence()
                 if time.time() - self._last_secret_update_time > 15:
                     self._update_secret()
-                # if time.time() - self._last_connect_time > 120 and start_presence(): #!Eric please add module manager(pip)
+                # if time.time() - self._last_connect_time > 120 and is_discord_running(): #!Eric please add module manager(pip)
                 #     self._reconnect()
                 time.sleep(0.03)
 
@@ -332,54 +348,51 @@ if not android:
             self._subscribe("ACTIVITY_JOIN")
             self._subscribe("ACTIVITY_JOIN_REQUEST")
 
-        def _update_presence(self) -> None: #! update this function when latest pypresence releases
+        def _update_presence(self) -> None: 
             self._last_update_time = time.time()
             try:
-                if start_presence():
-                    self._do_update_presence()
-            except Exception:
+                self._do_update_presence()
+            except AttributeError:
                 try:
-                    if start_presence():
-                        self.rpc.connect()
-                except (InvalidID, DiscordError) as e:
-                    if not type(e) in (InvalidID, DiscordError):
-                        print_error("failed to update presence", include_exception= True)
-                    else:
-                        self.rpc.close()
-                        if start_presence():
-                            self._reconnect
-                        pass
+                    self._reconnect()
+                except Exception:
+                    print_error("failed to update presence", include_exception= True)
+                    
 
         def _reconnect(self) -> None:
-            self.rpc.connect()
-            self._subscribe_events()
-            self._do_update_presence()
-            self._last_connect_time = time.time()
+            if RpcThread.is_discord_running():
+                self.rpc.connect()
+                self._subscribe_events()
+                self._do_update_presence()
+                self._last_connect_time = time.time()
 
         def _do_update_presence(self) -> None:
-            data = self.rpc.update(
-                state=self.state or "  ",
-                details=self.details,
-                start=start_time,
-                large_image=self.large_image_key,
-                large_text=self.large_image_text,
-                small_image=self.small_image_key,
-                small_text=self.small_image_text,
-                party_id=self.party_id,
-                party_size=[self.party_size, self.party_max],
-                join=self.join_secret,
-                # buttons = [ #!cant use buttons together with join
-                #     {
-                #         "label": "Discord Server",
-                #         "url": "https://ballistica.net/discord"
-                #     },
-                #     {
-                #         "label": "Download Bombsquad",
-                #         "url": "https://bombsquad.ga/download"}
-                # ]
-            )
+            try:
+                data = self.rpc.update(
+                    state=self.state or "  ",
+                    details=self.details,
+                    start=start_time,
+                    large_image=self.large_image_key,
+                    large_text=self.large_image_text,
+                    small_image=self.small_image_key,
+                    small_text=self.small_image_text,
+                    party_id=self.party_id,
+                    party_size=[self.party_size, self.party_max],
+                    join=self.join_secret,
+                    # buttons = [ #!cant use buttons together with join
+                    #     {
+                    #         "label": "Discord Server",
+                    #         "url": "https://ballistica.net/discord"
+                    #     },
+                    #     {
+                    #         "label": "Download Bombsquad",
+                    #         "url": "https://bombsquad.ga/download"}
+                    # ]
+                )
 
-            self.handle_event(data)
+                self.handle_event(data)
+            except (PipeClosed, DiscordError):
+                self._reconnect()
 
         def handle_event(self, data):
             evt = data["evt"]
@@ -430,9 +443,6 @@ if not android:
                 ),
                 from_other_thread=True,
             )  
-
-
-dirpath = Path(f"{_ba.app.python_directory_user}/image_id.json")
 
 
 class Discordlogin(PopupWindow):
@@ -519,7 +529,7 @@ class Discordlogin(PopupWindow):
             scale=1.0,
             text="Discord",
             maxwidth=200,
-            color=(0.10, 0.95, 0.10)
+            color=(0.10, 0.95, 0.10))
             
         ba.textwidget(
             parent=self.root_widget,
@@ -595,21 +605,6 @@ class Discordlogin(PopupWindow):
             ba.screenmessage("Account successfully removed!!", (0.10, 0.10, 1.00))
             ws.close()
 
-    
-
-def start_presence():
-    for i in range(6463,6473):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(0.01)
-        try:
-            conn = s.connect_ex(('localhost', i))
-            s.close()
-            if (conn == 0):
-                s.close()
-                return(True)
-        except:
-            s.close()
-            return(False)
         
 run_once = False
 def get_once_asset():
@@ -632,7 +627,7 @@ def get_once_asset():
             asset.append(dem)
         asset_id_dict = dict(zip(asset, asset_id))
 
-        with open(dirpath, "w") as imagesets:
+        with open(DIRPATH, "w") as imagesets:
             jsonfile = json.dumps(asset_id_dict)
             json.dump(asset_id_dict, imagesets, indent=4)
     except:
@@ -640,9 +635,9 @@ def get_once_asset():
     run_once = True
 
 def get_class():
-    if android:
+    if ANDROID:
         return PresenceUpdate()
-    elif not android and start_presence():
+    elif not ANDROID and RpcThread.is_discord_running():
         return RpcThread()
 
 
@@ -653,17 +648,17 @@ class DiscordRP(ba.Plugin):
         self.rpc_thread = get_class()
         self._last_server_info: str | None = None
 
-        if not android:
+        if not ANDROID:
             _run_overrides()
         get_once_asset()
 
     def on_app_running(self) -> None:
-        if not android and start_presence():
+        if not ANDROID:
             self.rpc_thread.start()  
             self.update_timer = ba.Timer(
                 1, ba.WeakCall(self.update_status), timetype=ba.TimeType.REAL, repeat=True
             )
-        if android:
+        if ANDROID:
             self.update_timer = ba.Timer(
                 4, ba.WeakCall(self.update_status), timetype=ba.TimeType.REAL, repeat=True
             )
@@ -672,17 +667,18 @@ class DiscordRP(ba.Plugin):
         return True
 
     def show_settings_ui(self, button):
-        if not android and start_presence():
+        if not ANDROID:
             ba.screenmessage("Nothing here achievement!!!", (0.26, 0.65, 0.94))
             ba.playsound(ba.getsound('achievement'))
         else:
             Discordlogin()
 
     def on_app_shutdown(self) -> None:
-        if not android and start_presence():
+        if not ANDROID and RpcThread.is_discord_running():
             self.rpc_thread.rpc.close()
             self.rpc_thread.should_close = True
         else:
+            # stupid code
             ws.close()
 
     def _get_current_activity_name(self) -> str | None:
@@ -737,7 +733,7 @@ class DiscordRP(ba.Plugin):
             f"{_ba.app.platform.capitalize()}({_ba.app.version})"
         )
         connection_info = _ba.get_connection_to_host_info()
-        if not android:
+        if not ANDROID:
             svinfo = str(connection_info)
             if self._last_server_info != svinfo:
                 self._last_server_info = svinfo
@@ -840,7 +836,7 @@ class DiscordRP(ba.Plugin):
 
             mapname, short_map_name = self._get_current_map_name()
             if mapname:
-                with open(dirpath, 'r') as asset_dict:
+                with open(DIRPATH, 'r') as asset_dict:
                     asset_keys = json.load(asset_dict).keys()
                 if short_map_name in asset_keys:
                     self.rpc_thread.large_image_text = mapname
@@ -850,9 +846,10 @@ class DiscordRP(ba.Plugin):
 
         if _ba.get_idle_time() / (1000 * 60) % 60 >= 0.4:
             self.rpc_thread.details = f"AFK in {self.rpc_thread.details}"
-            if not android:
+            if not ANDROID:
                 self.rpc_thread.large_image_key = (
                     "https://media.tenor.com/uAqNn6fv7x4AAAAM/bombsquad-spaz.gif"
                 )
-        if android and Path(f"{getcwd()}/token.txt").exists():
+        if ANDROID and Path(f"{getcwd()}/token.txt").exists():
             self.rpc_thread.presence()
+            
