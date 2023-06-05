@@ -1,4 +1,4 @@
-# Released under the MIT License. See LICENSE for details.
+# Released under the MIT and Apache License. See LICENSE for details.
 #
 """placeholder :clown:"""
 
