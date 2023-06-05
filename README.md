@@ -5,7 +5,7 @@
 A mod for the game  Bombsquad to display custom rich presence for mobile and desktop. Utilizes [`pypresence`](https://github.com/qwertyquerty/pypresence) and [`websocket-client`](https://github.com/websocket-client/websocket-client).
 [Join official Discord Bombsquad Server](https://discord.gg/bombsquad-ballistica-official-1001896771347304639)
 
-# Installation
+# 💀WARNING💀
 
 ```
 Asking users to share a user token is forbidden by our Developer Policy and may result in action taken against your app and/or account. Please don't take that approach.
@@ -16,7 +16,7 @@ Thanks,
 Shipwreck
 ``` 
 ```diff
-- 💀WARNING💀 - FROM NOW AND ONWARDS DOWNLOAD MODS FROM PLUGIN MANAGER AND OPEN SOURCED ONES
+- FROM NOW AND ONWARDS DOWNLOAD MODS FROM PLUGIN MANAGER AND OPEN SOURCED ONES
 ```
 
 # Image samples
