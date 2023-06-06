@@ -550,7 +550,7 @@ class Discordlogin(PopupWindow):
             h_align='center',
             v_align='center',
             scale=1.0,
-            text="Use at your own risk\n discord account might get terminated",
+            text="💀Use at your own risk💀\n ⚠️discord account might get terminated⚠️",
             maxwidth=200,
             color=(1.00, 0.15, 0.15))
         
