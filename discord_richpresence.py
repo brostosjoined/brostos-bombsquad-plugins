@@ -27,7 +27,6 @@ import _babase
 import bascenev1
 import bauiv1 as bui
 import ba
-import _ba
 
 from typing import TYPE_CHECKING
 
@@ -35,7 +34,7 @@ if TYPE_CHECKING:
     from typing import Any, Tuple
 
 
-ANDROID = ba.app.platform == "android"#!fix platform 
+ANDROID = babase.app.classic.platform == "android"#!fix platform 
 DIRPATH = Path(f"{_babase.app.python_directory_user}/image_id.json")
 
 if ANDROID:  # !can add ios in future
@@ -73,7 +72,7 @@ if ANDROID:  # !can add ios in future
             self.large_image_text: str | None = "BombSquad Icon"
             self.small_image_key: str | None = None
             self.small_image_text: str | None = (
-                f"{_ba.app.platform.capitalize()}({_babase.app.version})")
+                f"{_babase.app.classic.platform.capitalize()}({_babase.app.version})")
             self.media_proxy = "mp:/app-assets/963434684669382696/{}.png"
             self.identify: bool = False
             self.party_id: str = str(uuid.uuid4())
@@ -740,9 +739,9 @@ class DiscordRP(babase.Plugin):
 
         self.rpc_thread.large_image_key = "bombsquadicon"
         self.rpc_thread.large_image_text = "BombSquad"
-        self.rpc_thread.small_image_key = _ba.app.platform
+        self.rpc_thread.small_image_key = _babase.app.classic.platform
         self.rpc_thread.small_image_text = (
-            f"{_ba.app.platform.capitalize()}({_babase.app.version})"
+            f"{_babase.app.classic.platform.capitalize()}({_babase.app.version})"
         )
         connection_info = bascenev1.get_connection_to_host_info()
         if not ANDROID:
@@ -830,7 +829,7 @@ class DiscordRP(babase.Plugin):
                     points = act._score
                     self.rpc_thread.details += f" ({points} points)"
                 elif isinstance(act, MeteorShowerGame):
-                    with ba.Context(act):
+                    with bascenev1.ContextRef(act):
                         sec = bascenev1.time() - act._timer.getstarttime()
                     secfmt = ""
                     if sec < 60:
