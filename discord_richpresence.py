@@ -573,7 +573,7 @@ class Discordlogin(PopupWindow):
             bui.containerwidget(edit=self.root_widget, transition='out_scale')
 
     def on_popup_cancel(self) -> None:
-        bui.getsound('swish')
+        bui.getsound('swish').play()
         self._transition_out()
 
     def login(self):
@@ -604,16 +604,17 @@ class Discordlogin(PopupWindow):
                 with open(self.path, 'wb') as f:
                     f.write(token)
                 bui.screenmessage("Successfully logged in", (0.21, 1.0, 0.20))
-                bui.getsound('shieldUp')
+                bui.getsound('shieldUp').play()
             except:
                 bui.screenmessage("Incorrect credentials", (1.00, 0.15, 0.15))
-                bui.getsound('error')
+                bui.getsound('error').play()
 
             conn.close()
         else:
             remove(self.path)
-            bui.getsound('shieldDown')
+            bui.getsound('shieldDown').play()
             bui.screenmessage("Account successfully removed!!", (0.10, 0.10, 1.00))
+            self.on_popup_cancel()
             ws.close()
 
         
@@ -680,12 +681,12 @@ class DiscordRP(babase.Plugin):
     def show_settings_ui(self, button):
         if not ANDROID:
             bui.screenmessage("Nothing here achievement!!!", (0.26, 0.65, 0.94))
-            bui.getsound('achievement')
+            bui.getsound('achievement').play()
         else:
             Discordlogin()
 
     def on_app_shutdown(self) -> None:
-        if not ANDROID and RpcThread.is_discord_running():
+        if not ANDROID:
             self.rpc_thread.rpc.close()
             self.rpc_thread.should_close = True
         else:
