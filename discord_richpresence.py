@@ -218,7 +218,7 @@ if not ANDROID:
 
     #Updating pypresence
     try:
-        from pypresence import PipeClosed, DiscordError
+        from pypresence import PipeClosed, DiscordError, DiscordNotFound
     except ImportError:
         shutil.rmtree(Path(f"{getcwd()}/ba_data/python/pypresence"))
         get_module()
@@ -335,7 +335,7 @@ if not ANDROID:
             asyncio.set_event_loop(get_event_loop())
             while not self.should_close:
                 if time.time() - self._last_update_time > 0.1:
-                    self._update_presence()
+                    self._do_update_presence()
                 if time.time() - self._last_secret_update_time > 15:
                     self._update_secret()
                 # if time.time() - self._last_connect_time > 120 and is_discord_running(): #!Eric please add module manager(pip)
@@ -359,51 +359,55 @@ if not ANDROID:
             self._subscribe("ACTIVITY_JOIN")
             self._subscribe("ACTIVITY_JOIN_REQUEST")
 
-        def _update_presence(self) -> None: 
-            self._last_update_time = time.time()
-            try:
-                self._do_update_presence()
-            except AttributeError:
-                try:
-                    self._reconnect()
-                except Exception:
-                    print_error("failed to update presence", include_exception= True)
+        # def _update_presence(self) -> None: 
+        #     self._last_update_time = time.time()
+        #     try:
+        #         self._do_update_presence()
+        #     except (AttributeError, AssertionError):
+        #         try:
+        #             self._reconnect()
+        #         except Exception:
+        #             print_error("failed to update presence", include_exception= True)
                     
 
         def _reconnect(self) -> None:
-            if RpcThread.is_discord_running():
-                self.rpc.connect()
-                self._subscribe_events()
-                self._do_update_presence()
-                self._last_connect_time = time.time()
+            self.rpc.connect()
+            self._subscribe_events()
+            self._do_update_presence()
+            self._last_connect_time = time.time()
 
         def _do_update_presence(self) -> None:
-            try:
-                data = self.rpc.update(
-                    state=self.state or "  ",
-                    details=self.details,
-                    start=start_time,
-                    large_image=self.large_image_key,
-                    large_text=self.large_image_text,
-                    small_image=self.small_image_key,
-                    small_text=self.small_image_text,
-                    party_id=self.party_id,
-                    party_size=[self.party_size, self.party_max],
-                    join=self.join_secret,
-                    # buttons = [ #!cant use buttons together with join
-                    #     {
-                    #         "label": "Discord Server",
-                    #         "url": "https://ballistica.net/discord"
-                    #     },
-                    #     {
-                    #         "label": "Download Bombsquad",
-                    #         "url": "https://bombsquad.ga/download"}
-                    # ]
-                )
+            if RpcThread.is_discord_running():
+                self._last_update_time = time.time()
+                try:
+                    data = self.rpc.update(
+                        state=self.state or "  ",
+                        details=self.details,
+                        start=start_time,
+                        large_image=self.large_image_key,
+                        large_text=self.large_image_text,
+                        small_image=self.small_image_key,
+                        small_text=self.small_image_text,
+                        party_id=self.party_id,
+                        party_size=[self.party_size, self.party_max],
+                        join=self.join_secret,
+                        # buttons = [ #!cant use buttons together with join
+                        #     {
+                        #         "label": "Discord Server",
+                        #         "url": "https://ballistica.net/discord"
+                        #     },
+                        #     {
+                        #         "label": "Download Bombsquad",
+                        #         "url": "https://bombsquad.ga/download"}
+                        # ]
+                    )
 
-                self.handle_event(data)
-            except (PipeClosed, DiscordError):
-                self._reconnect()
+                    self.handle_event(data)
+                except (PipeClosed, DiscordError, AssertionError):
+                    try:
+                        self._reconnect()
+                    except (DiscordNotFound, DiscordError):
+                        pass
 
         def handle_event(self, data):
             evt = data["evt"]
