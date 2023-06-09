@@ -11,7 +11,7 @@ from urllib.request import Request, urlopen, urlretrieve
 from pathlib import Path
 from os import getcwd, remove
 from zipfile import ZipFile
-from bastd.ui.popup import PopupWindow 
+from bauiv1lib.popup import PopupWindow
 from babase._mgen.enums import TimeType
 
 import asyncio
@@ -25,8 +25,8 @@ import shutil
 import babase
 import _babase
 import bascenev1
+import bascenev1lib
 import bauiv1 as bui
-import ba
 
 from typing import TYPE_CHECKING
 
@@ -264,7 +264,7 @@ if not ANDROID:
             c = kwargs.get("address") or args[0]
             _last_server_port = kwargs.get("port") or args[1]
         
-        bascenev1.connect_to_party = ba.internal.connect_to_party = new_connect #!fix here
+        bascenev1.connect_to_party = ba.internal.connect_to_party = new_connect #FIXME
 
     start_time = time.time()
 
@@ -605,6 +605,7 @@ class Discordlogin(PopupWindow):
                     f.write(token)
                 bui.screenmessage("Successfully logged in", (0.21, 1.0, 0.20))
                 bui.getsound('shieldUp').play()
+                self.on_popup_cancel()
             except:
                 bui.screenmessage("Incorrect credentials", (1.00, 0.15, 0.15))
                 bui.getsound('error').play()
@@ -649,11 +650,11 @@ def get_once_asset():
 def get_class():
     if ANDROID:
         return PresenceUpdate()
-    elif not ANDROID and RpcThread.is_discord_running():
+    elif not ANDROID:
         return RpcThread()
 
 
-# ba_meta export plugin
+# ba_meta export babase.Plugin
 class DiscordRP(babase.Plugin):
     def __init__(self) -> None:
         self.update_timer: bascenev1.Timer | None = None
@@ -669,7 +670,7 @@ class DiscordRP(babase.Plugin):
             self.rpc_thread.start()  
             self.update_timer = bascenev1.Timer(
                 1, babase.WeakCall(self.update_status), timetype=TimeType.REAL, repeat=True
-            )
+            )#!remove timetype and see
         if ANDROID:
             self.update_timer = bascenev1.Timer(
                 4, babase.WeakCall(self.update_status), timetype=TimeType.REAL, repeat=True
@@ -686,7 +687,7 @@ class DiscordRP(babase.Plugin):
             Discordlogin()
 
     def on_app_shutdown(self) -> None:
-        if not ANDROID:
+        if not ANDROID and self.rpc_thread.is_discord_running():
             self.rpc_thread.rpc.close()
             self.rpc_thread.should_close = True
         else:
@@ -808,9 +809,9 @@ class DiscordRP(babase.Plugin):
             act = bascenev1.get_foreground_host_activity()
             session = bascenev1.get_foreground_host_session()
             if act:
-                from bastd.game.elimination import EliminationGame
-                from bastd.game.thelaststand import TheLastStandGame
-                from bastd.game.meteorshower import MeteorShowerGame
+                from bascenev1lib.game.elimination import EliminationGame
+                from bascenev1lib.game.thelaststand import TheLastStandGame
+                from bascenev1lib.game.meteorshower import MeteorShowerGame
 
                 # noinspection PyUnresolvedReferences,PyProtectedMember
                 try:
