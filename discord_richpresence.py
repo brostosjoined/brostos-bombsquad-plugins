@@ -759,7 +759,7 @@ class DiscordRP(babase.Plugin):
                 self.rpc_thread._update_secret()
         if connection_info != {}:
             servername = connection_info["name"]
-            self.rpc_thread.details = "Server"
+            self.rpc_thread.details = "Online"
             self.rpc_thread.party_size = max(
                 1, sum(len(client["players"]) for client in roster)
             )
