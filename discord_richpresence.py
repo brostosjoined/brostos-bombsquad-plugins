@@ -24,7 +24,7 @@ import threading
 import shutil
 import babase
 import _babase
-import bascenev1
+import bascenev1 as bs 
 import bascenev1lib
 import bauiv1 as bui
 
@@ -120,7 +120,7 @@ if ANDROID:  # !can add ios in future
                             "metadata": {
                                 "button_urls": [
                                     "https://discord.gg/bombsquad-ballistica-official-1001896771347304639",
-                                    "https://ballistica.net/downloads",#!Hope Mr.Smoothy site comes back
+                                    "https://bombsquad-community.web.app/download",
                                 ]
                             },
                         }
@@ -247,15 +247,15 @@ if not ANDROID:
             print(f"LOG in discordrp.py: {msg}")
 
     def _run_overrides() -> None:
-        old_init = bascenev1.Activity.__init__
+        old_init = bs.Activity.__init__
 
         def new_init(self, *args: Any, **kwargs: Any) -> None:  # type: ignore
             old_init(self, *args, **kwargs)
             self._discordrp_start_time = time.mktime(time.localtime())
 
-        bascenev1.Activity.__init__ = new_init  # type: ignore
+        bs.Activity.__init__ = new_init  # type: ignore
 
-        old_connect = bascenev1.connect_to_party
+        old_connect = bs.connect_to_party
 
         def new_connect(*args, **kwargs) -> None:  # type: ignore
             global _last_server_addr
@@ -264,7 +264,7 @@ if not ANDROID:
             c = kwargs.get("address") or args[0]
             _last_server_port = kwargs.get("port") or args[1]
         
-        bascenev1.connect_to_party = ba.internal.connect_to_party = new_connect #FIXME
+        bs.connect_to_party = new_connect 
 
     start_time = time.time()
 
@@ -305,7 +305,7 @@ if not ANDROID:
         
         def _generate_join_secret(self):
             # resp = requests.get('https://legacy.ballistica.net/bsAccessCheck').text
-            connection_info = bascenev1.get_connection_to_host_info()
+            connection_info = bs.get_connection_to_host_info()
             if connection_info:
                 addr = _last_server_addr
                 port = _last_server_port
@@ -403,7 +403,7 @@ if not ANDROID:
                     )
 
                     self.handle_event(data)
-                except (PipeClosed, DiscordError, AssertionError):
+                except (PipeClosed, DiscordError, AssertionError, AttributeError):
                     try:
                         self._reconnect()
                     except (DiscordNotFound, DiscordError):
@@ -444,27 +444,28 @@ if not ANDROID:
 
         def _connect_to_party(self, hostname, port) -> None:
             babase.pushcall(
-                bascenev1.Call(bascenev1.connect_to_party, hostname, port), from_other_thread=True
+                bs.Call(bs.connect_to_party, hostname, port), from_other_thread=True
             )  
 
         def on_join_request(self, username, uid, discriminator, avatar) -> None:
             del uid  # unused
             del avatar  # unused
             babase.pushcall(
-                bascenev1.Call(
+                bs.Call(
                     bui.screenmessage,
-                    "Discord: {}#{} wants to join!".format(username, discriminator),
+                    "Discord: {} wants to join!".format(username),
                     color=(0.0, 1.0, 0.0),
                 ),
                 from_other_thread=True,
-            )  
+            )
+            bui.getsound('bellMed').play() 
 
 
 class Discordlogin(PopupWindow):
 
     def __init__(self):
         # pylint: disable=too-many-locals
-        _uiscale = bui.app.classic.ui.uiscale
+        _uiscale = bui.app.ui_v1.uiscale
         self._transitioning_out = False
         s = 1.25 if _uiscale is babase.UIScale.SMALL else 1.27 if _uiscale is babase.UIScale.MEDIUM else 1.3
         self._width = 380 * s
@@ -576,7 +577,7 @@ class Discordlogin(PopupWindow):
             self._transitioning_out = True
             bui.containerwidget(edit=self.root_widget, transition='out_scale')
 
-    def on_popup_cancel(self) -> None:
+    def on_bascenev1libup_cancel(self) -> None:
         bui.getsound('swish').play()
         self._transition_out()
 
@@ -609,7 +610,7 @@ class Discordlogin(PopupWindow):
                     f.write(token)
                 bui.screenmessage("Successfully logged in", (0.21, 1.0, 0.20))
                 bui.getsound('shieldUp').play()
-                self.on_popup_cancel()
+                self.on_bascenev1libup_cancel()
             except:
                 bui.screenmessage("Incorrect credentials", (1.00, 0.15, 0.15))
                 bui.getsound('error').play()
@@ -619,7 +620,7 @@ class Discordlogin(PopupWindow):
             remove(self.path)
             bui.getsound('shieldDown').play()
             bui.screenmessage("Account successfully removed!!", (0.10, 0.10, 1.00))
-            self.on_popup_cancel()
+            self.on_bascenev1libup_cancel()
             ws.close()
 
         
@@ -661,7 +662,7 @@ def get_class():
 # ba_meta export babase.Plugin
 class DiscordRP(babase.Plugin):
     def __init__(self) -> None:
-        self.update_timer: bascenev1.Timer | None = None
+        self.update_timer: bs.Timer | None = None
         self.rpc_thread = get_class()
         self._last_server_info: str | None = None
 
@@ -672,12 +673,12 @@ class DiscordRP(babase.Plugin):
     def on_app_running(self) -> None:
         if not ANDROID:
             self.rpc_thread.start()  
-            self.update_timer = bascenev1.Timer(
-                1, babase.WeakCall(self.update_status), timetype=TimeType.REAL, repeat=True
-            )#!remove timetype and see
+            self.update_timer = bs.AppTimer(
+                1, bs.WeakCall(self.update_status), repeat=True
+            )
         if ANDROID:
-            self.update_timer = bascenev1.Timer(
-                4, babase.WeakCall(self.update_status), timetype=TimeType.REAL, repeat=True
+            self.update_timer = bs.AppTimer(
+                4, bs.WeakCall(self.update_status), repeat=True
             )
 
     def has_settings_ui(self):
@@ -687,7 +688,7 @@ class DiscordRP(babase.Plugin):
         if not ANDROID:
             bui.screenmessage("Nothing here achievement!!!", (0.26, 0.65, 0.94))
             bui.getsound('achievement').play()
-        else:
+        if ANDROID:
             Discordlogin()
 
     def on_app_shutdown(self) -> None:
@@ -699,8 +700,8 @@ class DiscordRP(babase.Plugin):
             ws.close()
 
     def _get_current_activity_name(self) -> str | None:
-        act = bascenev1.get_foreground_host_activity()
-        if isinstance(act, bascenev1.GameActivity):
+        act = bs.get_foreground_host_activity()
+        if isinstance(act, bs.GameActivity):
             return act.name
             
         this = "Lobby"
@@ -732,16 +733,16 @@ class DiscordRP(babase.Plugin):
         return name
 
     def _get_current_map_name(self) -> Tuple[str | None, str | None]:
-        act = bascenev1.get_foreground_host_activity()
-        if isinstance(act, bascenev1.GameActivity):
+        act = bs.get_foreground_host_activity()
+        if isinstance(act, bs.GameActivity):
             texname = act.map.get_preview_texture_name()
             if texname:
                 return act.map.name, texname.lower().removesuffix("preview")
         return None, None
 
     def update_status(self) -> None:
-        roster = bascenev1.get_game_roster()
-        connection_info = bascenev1.get_connection_to_host_info()
+        roster = bs.get_game_roster()
+        connection_info = bs.get_connection_to_host_info()
 
         self.rpc_thread.large_image_key = "bombsquadicon"
         self.rpc_thread.large_image_text = "BombSquad"
@@ -749,7 +750,7 @@ class DiscordRP(babase.Plugin):
         self.rpc_thread.small_image_text = (
             f"{_babase.app.classic.platform.capitalize()}({_babase.app.version})"
         )
-        connection_info = bascenev1.get_connection_to_host_info()
+        connection_info = bs.get_connection_to_host_info()
         if not ANDROID:
             svinfo = str(connection_info)
             if self._last_server_info != svinfo:
@@ -767,7 +768,7 @@ class DiscordRP(babase.Plugin):
                 self.rpc_thread.state = "Private Party"
             elif servername == "":  # A local game joinable from the internet
                 try:
-                    offlinename = json.loads(bascenev1.get_game_roster()[0]["spec_string"])[
+                    offlinename = json.loads(bs.get_game_roster()[0]["spec_string"])[
                         "n"
                     ]
                     if len(offlinename > 19):
@@ -786,14 +787,14 @@ class DiscordRP(babase.Plugin):
             self.rpc_thread.details = "Local" #! replace with something like ballistica github cause  
             self.rpc_thread.state = self._get_current_activity_name()
             self.rpc_thread.party_size = max(1, len(roster))
-            self.rpc_thread.party_max = max(1, bascenev1.get_public_party_max_size())
+            self.rpc_thread.party_max = max(1, bs.get_public_party_max_size())
 
             if (
-                bascenev1.get_foreground_host_session() is not None
+                bs.get_foreground_host_session() is not None
                 and self.rpc_thread.details == "Local"
             ):
                 session = (
-                    bascenev1.get_foreground_host_session()
+                    bs.get_foreground_host_session()
                     .__class__.__name__.replace("MainMenuSession", "")
                     .replace("EndSession", "")
                     .replace("FreeForAllSession", ": FFA") #! for session use small image key
@@ -810,8 +811,8 @@ class DiscordRP(babase.Plugin):
                 self.rpc_thread.large_image_text = "Viewing Awesomeness"
                 #!self.rpc_thread.small_image_key = "replaysmall"
 
-            act = bascenev1.get_foreground_host_activity()
-            session = bascenev1.get_foreground_host_session()
+            act = bs.get_foreground_host_activity()
+            session = bs.get_foreground_host_session()
             if act:
                 from bascenev1lib.game.elimination import EliminationGame
                 from bascenev1lib.game.thelaststand import TheLastStandGame
@@ -835,8 +836,8 @@ class DiscordRP(babase.Plugin):
                     points = act._score
                     self.rpc_thread.details += f" ({points} points)"
                 elif isinstance(act, MeteorShowerGame):
-                    with bascenev1.ContextRef(act):
-                        sec = bascenev1.time() - act._timer.getstarttime()
+                    with bs.ContextRef(act):
+                        sec = bs.time() - act._timer.getstarttime()
                     secfmt = ""
                     if sec < 60:
                         secfmt = f"{sec:.2f}"
