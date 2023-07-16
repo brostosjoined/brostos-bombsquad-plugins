@@ -444,21 +444,21 @@ if not ANDROID:
 
         def _connect_to_party(self, hostname, port) -> None:
             babase.pushcall(
-                bs.Call(bs.connect_to_party, hostname, port), from_other_thread=True
+                babase.Call(bs.connect_to_party, hostname, port), from_other_thread=True
             )  
 
         def on_join_request(self, username, uid, discriminator, avatar) -> None:
             del uid  # unused
             del avatar  # unused
             babase.pushcall(
-                bs.Call(
+                babase.Call(
                     bui.screenmessage,
                     "Discord: {} wants to join!".format(username),
                     color=(0.0, 1.0, 0.0),
                 ),
                 from_other_thread=True,
             )
-            bui.getsound('bellMed').play() 
+            babase.pushcall(lambda: bui.getsound('bellMed').play(), from_other_thread=True)
 
 
 class Discordlogin(PopupWindow):
