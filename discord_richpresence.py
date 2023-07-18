@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from typing import Any, Tuple
 
 
-ANDROID = babase.app.classic.platform == "android"#!fix platform 
+ANDROID = babase.app.classic.platform == "android"
 DIRPATH = Path(f"{_babase.app.python_directory_user}/image_id.json")
 
 if ANDROID:  # !can add ios in future
@@ -771,7 +771,7 @@ class DiscordRP(babase.Plugin):
                     offlinename = json.loads(bs.get_game_roster()[0]["spec_string"])[
                         "n"
                     ]
-                    if len(offlinename > 19):
+                    if len(offlinename) > 19:
                         self.rpc_thread.state = offlinename[slice(19)] + "..."
                     else:
                         self.rpc_thread.state = offlinename
