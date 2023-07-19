@@ -182,8 +182,11 @@ if ANDROID:  # !can add ios in future
                 identify()
             while True:
                 heartbeat_payload = {"op": 1, "d": heartbeat_interval}
-                ws.send(json.dumps(heartbeat_payload))
-                time.sleep(heartbeat_interval / 1000)
+                try:
+                    ws.send(json.dumps(heartbeat_payload))
+                    time.sleep(heartbeat_interval / 1000)
+                except:
+                    pass
 
         threading.Thread(target=heartbeats, daemon=True, name="heartbeat").start()
 
@@ -696,8 +699,9 @@ class DiscordRP(babase.Plugin):
             self.rpc_thread.rpc.close()
             self.rpc_thread.should_close = True
         else:
+            raise NotImplementedError("This function does not work on android")
             # stupid code
-            ws.close()
+            # ws.close()
 
     def _get_current_activity_name(self) -> str | None:
         act = bs.get_foreground_host_activity()
