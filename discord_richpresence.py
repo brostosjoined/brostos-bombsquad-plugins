@@ -44,12 +44,15 @@ if ANDROID:  # !can add ios in future
         install_path = Path(f"{getcwd()}/ba_data/python")  # For the guys like me on windows
         path = Path(f"{install_path}/websocket.zip")
         file_path = Path(f"{install_path}/websocket")
+        source_dir = Path(f"{install_path}/websocket-client-1.6.1/websocket")
         if not file_path.exists():
-            url = "https://github.com/brostosjoined/bombsquadrpc/releases/download/presence-1.0/websocket.zip"
+            url = "https://github.com/websocket-client/websocket-client/archive/refs/tags/v1.6.1.zip"
             try:
                 filename, headers = urlretrieve(url, filename=path)
                 with ZipFile(filename) as f:
                     f.extractall(install_path)
+                    shutil.copytree(source_dir, file_path)
+                    shutil.rmtree(Path(f"{install_path}/websocket-client-1.6.1"))
                 remove(path)
             except:
                 pass
@@ -208,25 +211,51 @@ if not ANDROID:
         install_path = Path(f"{getcwd()}/ba_data/python")
         path = Path(f"{install_path}/pypresence.zip")
         file_path = Path(f"{install_path}/pypresence")
+        source_dir = Path(f"{install_path}/pypresence-4.3.0/pypresence")
         if not file_path.exists():
-            url = "https://github.com/brostosjoined/bombsquadrpc/releases/download/presence-1.0/pypresence.zip"
+            url = "https://github.com/qwertyquerty/pypresence/archive/refs/tags/v4.3.0.zip"
             try:
                 filename, headers = urlretrieve(url, filename=path)
                 with ZipFile(filename) as f:
                     f.extractall(install_path)
+                    shutil.copytree(source_dir, file_path)
+                    shutil.rmtree(Path(f"{install_path}/pypresence-4.3.0"))
                 remove(path)
             except:
                 pass
+    
+    # Make modifications for it to work on windows
+    if babase.app.classic.platform == "windows":
+        with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "r") as file:
+            data = file.readlines()
+            data[45] = """
+            def get_event_loop(force_fresh=False):
+                loop = asyncio.ProactorEventLoop() if sys.platform == 'win32' else asyncio.new_event_loop()
+                if force_fresh:
+                    return loop
+                try:
+                    running = asyncio.get_running_loop()
+                except RuntimeError:
+                    return loop
+                if running.is_closed():
+                    return loop
+                else:
+                    if sys.platform in ('linux', 'darwin'):
+                        return running
+                    if sys.platform == 'win32':
+                        if isinstance(running, asyncio.ProactorEventLoop):
+                            return running
+                        else:
+                            return loop"""
+            
+        with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "w") as file:
+            for number, line in enumerate(data):
+                if number not in range(46,55):
+                    file.write(line)
     get_module()
 
-    #Updating pypresence
-    try:
-        from pypresence import PipeClosed, DiscordError, DiscordNotFound
-    except ImportError:
-        shutil.rmtree(Path(f"{getcwd()}/ba_data/python/pypresence"))
-        get_module()
         
-            
+    from pypresence import PipeClosed, DiscordError, DiscordNotFound
     from pypresence.utils import get_event_loop
     import pypresence 
     import socket
