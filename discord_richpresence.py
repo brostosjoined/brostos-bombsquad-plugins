@@ -54,8 +54,11 @@ if ANDROID:  # !can add ios in future
                     shutil.copytree(source_dir, file_path)
                     shutil.rmtree(Path(f"{install_path}/websocket-client-1.6.1"))
                 remove(path)
-            except:
-                pass
+            except Exception as e:
+                if type(e) == shutil.Error:
+                    shutil.rmtree(Path(f"{install_path}/websocket-client-1.6.1"))
+                else:
+                    pass
     get_module()
 
     import websocket
@@ -224,33 +227,33 @@ if not ANDROID:
             except:
                 pass
     
-    # Make modifications for it to work on windows
-    if babase.app.classic.platform == "windows":
-        with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "r") as file:
-            data = file.readlines()
-            data[45] = """
-            def get_event_loop(force_fresh=False):
-                loop = asyncio.ProactorEventLoop() if sys.platform == 'win32' else asyncio.new_event_loop()
-                if force_fresh:
-                    return loop
-                try:
-                    running = asyncio.get_running_loop()
-                except RuntimeError:
-                    return loop
-                if running.is_closed():
-                    return loop
-                else:
-                    if sys.platform in ('linux', 'darwin'):
-                        return running
-                    if sys.platform == 'win32':
-                        if isinstance(running, asyncio.ProactorEventLoop):
-                            return running
-                        else:
-                            return loop"""
+        # Make modifications for it to work on windows
+        if babase.app.classic.platform == "windows":
+            with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "r") as file:
+                data = file.readlines()
+                data[45] = """
+def get_event_loop(force_fresh=False):
+    loop = asyncio.ProactorEventLoop() if sys.platform == 'win32' else asyncio.new_event_loop()
+    if force_fresh:
+        return loop
+    try:
+        running = asyncio.get_running_loop()
+    except RuntimeError:
+        return loop
+    if running.is_closed():
+        return loop
+    else:
+        if sys.platform in ('linux', 'darwin'):
+            return running
+        if sys.platform == 'win32':
+            if isinstance(running, asyncio.ProactorEventLoop):
+                return running
+            else:
+                return loop"""
             
         with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "w") as file:
             for number, line in enumerate(data):
-                if number not in range(46,55):
+                if number not in range(46,56):
                     file.write(line)
     get_module()
 
@@ -732,6 +735,15 @@ class DiscordRP(babase.Plugin):
             # stupid code
             # ws.close()
 
+    # def on_app_pause(self) -> None:
+    #     ws.close()
+
+    # def on_app_resume(self) -> None:
+    #     if Path(f"{getcwd()}/token.txt").exists():
+    #         threading.Thread(target=ws.run_forever, daemon=True, name="websocket").start()
+
+        
+        
     def _get_current_activity_name(self) -> str | None:
         act = bs.get_foreground_host_activity()
         if isinstance(act, bs.GameActivity):
