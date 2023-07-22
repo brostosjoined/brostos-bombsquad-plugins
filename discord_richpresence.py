@@ -61,16 +61,24 @@ if ANDROID:  # !can add ios in future
                     pass
     get_module()
 
+    from websocket import WebSocketConnectionClosedException
     import websocket
 
-    heartbeat_interval = int(41250)
-    resume_gateway_url: str | None = None
-    session_id: str | None = None
-
+    
     start_time = time.time()
-
+    
     class PresenceUpdate:
         def __init__(self):
+            self.ws = websocket.WebSocketApp("wss://gateway.discord.gg/?encoding=json&v=10",
+                                            on_open=self.on_open,
+                                            on_message=self.on_message,
+                                            on_error=self.on_error,
+                                            on_close=self.on_close)
+            self.heartbeat_interval = int(41250)
+            self.resume_gateway_url: str | None = None
+            self.session_id: str | None = None
+            self.stop_heartbeat_thread = threading.Event()
+            self.do_once = True
             self.state: str | None = "In Game"
             self.details: str | None = "Main Menu"
             self.start_timestamp = time.time()
@@ -133,79 +141,86 @@ if ANDROID:  # !can add ios in future
                     ],
                 },
             }
-            ws.send(json.dumps(presencepayload))
+            try:
+                self.ws.send(json.dumps(presencepayload))
+            except WebSocketConnectionClosedException:
+                pass
 
-    def on_message(ws, message):
-        global heartbeat_interval, resume_gateway_url, session_id
-        message = json.loads(message)
-        try:
-            heartbeat_interval = message["d"]["heartbeat_interval"]
-        except:
-            pass
-        try:
-            resume_gateway_url = message["d"]["resume_gateway_url"]
-            session_id = message["d"]["session_id"]
-        except:
-            pass
+        def on_message(self, ws, message):
+            message = json.loads(message)
+            try:
+                self.heartbeat_interval = message["d"]["heartbeat_interval"]
+            except:
+                pass
+            try:
+                self.resume_gateway_url = message["d"]["resume_gateway_url"]
+                self.session_id = message["d"]["session_id"]
+            except:
+                pass
 
-    def on_error(ws, error):
-        babase.print_exception(error)
+        def on_error(self, ws, error):
+            babase.print_exception(error)
 
-    def on_close(ws, close_status_code, close_msg):
-        # print("### closed ###")
-        pass
+        def on_close(self, ws, close_status_code, close_msg):
+            print("Closed Discord Connection Successfully")
 
-    def on_open(ws):
-        print("Connected to Discord Websocket")
+        def on_open(self, ws):
+            print("Connected to Discord Websocket")
 
-        def heartbeats():
-            """Sending heartbeats to keep the connection alive"""
-            global heartbeat_interval
-            if babase.do_once():
-                heartbeat_payload = {
-                    "op": 1,
-                    "d": 251,
-                }  # step two keeping connection alive by sending heart beats and receiving opcode 11
-                ws.send(json.dumps(heartbeat_payload))
+            def heartbeats():
+                """Sending heartbeats to keep the connection alive"""
+                if self.do_once:
+                    heartbeat_payload = {
+                        "op": 1,
+                        "d": 251,
+                    }  # step two keeping connection alive by sending heart beats and receiving opcode 11
+                    self.ws.send(json.dumps(heartbeat_payload))
+                    self.do_once = False
 
-                def identify():
-                    """Identifying to the gateway and enable by using user token and the intents we will be using e.g 256->For Presence"""
-                    with open(f"{getcwd()}/token.txt", 'r') as f:
-                        token = bytes.fromhex(f.read()).decode('utf-8')
-                    identify_payload = {
-                        "op": 2,
-                        "d": {
-                            "token": token,
-                            "properties": {
-                                "os": "linux",
-                                "browser": "Discord Android",
-                                "device": "android",
+                    def identify():
+                        """Identifying to the gateway and enable by using user token and the intents we will be using e.g 256->For Presence"""
+                        with open(f"{getcwd()}/token.txt", 'r') as f:
+                            token = bytes.fromhex(f.read()).decode('utf-8')
+                        identify_payload = {
+                            "op": 2,
+                            "d": {
+                                "token": token,
+                                "properties": {
+                                    "os": "linux",
+                                    "browser": "Discord Android",
+                                    "device": "android",
+                                },
+                                "intents": 256,
                             },
-                            "intents": 256,
-                        },
-                    }  # step 3 send an identify
-                    ws.send(json.dumps(identify_payload))
-                identify()
-            while True:
-                heartbeat_payload = {"op": 1, "d": heartbeat_interval}
-                try:
-                    ws.send(json.dumps(heartbeat_payload))
-                    time.sleep(heartbeat_interval / 1000)
-                except:
-                    pass
-
-        threading.Thread(target=heartbeats, daemon=True, name="heartbeat").start()
-
-    # websocket.enableTrace(True)
-    ws = websocket.WebSocketApp(
-        "wss://gateway.discord.gg/?encoding=json&v=10",
-        on_open=on_open,
-        on_message=on_message,
-        on_error=on_error,
-        on_close=on_close,
-    )
-    if Path(f"{getcwd()}/token.txt").exists():
-        threading.Thread(target=ws.run_forever, daemon=True, name="websocket").start()
+                        }  # step 3 send an identify
+                        self.ws.send(json.dumps(identify_payload))
+                    identify()
+                while True:
+                    heartbeat_payload = {"op": 1, "d": self.heartbeat_interval}
+                    
+                    try:
+                        self.ws.send(json.dumps(heartbeat_payload))
+                        time.sleep(self.heartbeat_interval / 1000)
+                    except:
+                        pass
+                    
+                    if self.stop_heartbeat_thread.is_set():
+                        self.stop_heartbeat_thread.clear()
+                        break
+            
+            threading.Thread(target=heartbeats, daemon=True, name="heartbeat").start()
+        
+        def start(self):
+            if Path(f"{getcwd()}/token.txt").exists():
+                threading.Thread(target=self.ws.run_forever, daemon=True, name="websocket").start()
+        
+        def close(self):
+            self.stop_heartbeat_thread.set()
+            self.do_once = True
+            self.ws.close()
+            
+                
+        
 
 
 if not ANDROID:
@@ -227,11 +242,11 @@ if not ANDROID:
             except:
                 pass
     
-        # Make modifications for it to work on windows
-        if babase.app.classic.platform == "windows":
-            with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "r") as file:
-                data = file.readlines()
-                data[45] = """
+            # Make modifications for it to work on windows
+            if babase.app.classic.platform == "windows":
+                with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "r") as file:
+                    data = file.readlines()
+                    data[45] = """
 def get_event_loop(force_fresh=False):
     loop = asyncio.ProactorEventLoop() if sys.platform == 'win32' else asyncio.new_event_loop()
     if force_fresh:
@@ -250,11 +265,11 @@ def get_event_loop(force_fresh=False):
                 return running
             else:
                 return loop"""
-            
-        with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "w") as file:
-            for number, line in enumerate(data):
-                if number not in range(46,56):
-                    file.write(line)
+                
+            with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "w") as file:
+                for number, line in enumerate(data):
+                    if number not in range(46,56):
+                        file.write(line)
     get_module()
 
         
@@ -656,7 +671,7 @@ class Discordlogin(PopupWindow):
             bui.getsound('shieldDown').play()
             bui.screenmessage("Account successfully removed!!", (0.10, 0.10, 1.00))
             self.on_bascenev1libup_cancel()
-            ws.close()
+            PresenceUpdate().ws.close()
 
         
 run_once = False
@@ -712,6 +727,7 @@ class DiscordRP(babase.Plugin):
                 1, bs.WeakCall(self.update_status), repeat=True
             )
         if ANDROID:
+            self.rpc_thread.start()
             self.update_timer = bs.AppTimer(
                 4, bs.WeakCall(self.update_status), repeat=True
             )
@@ -730,20 +746,13 @@ class DiscordRP(babase.Plugin):
         if not ANDROID and self.rpc_thread.is_discord_running():
             self.rpc_thread.rpc.close()
             self.rpc_thread.should_close = True
-        else:
-            raise NotImplementedError("This function does not work on android")
-            # stupid code
-            # ws.close()
 
-    # def on_app_pause(self) -> None:
-    #     ws.close()
-
-    # def on_app_resume(self) -> None:
-    #     if Path(f"{getcwd()}/token.txt").exists():
-    #         threading.Thread(target=ws.run_forever, daemon=True, name="websocket").start()
-
+    def on_app_pause(self) -> None:
+        self.rpc_thread.close()
         
-        
+    def on_app_resume(self) -> None:
+        self.rpc_thread.start()
+            
     def _get_current_activity_name(self) -> str | None:
         act = bs.get_foreground_host_activity()
         if isinstance(act, bs.GameActivity):
