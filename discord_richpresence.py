@@ -45,17 +45,22 @@ if ANDROID:  # !can add ios in future
         path = Path(f"{install_path}/websocket.tar.gz")
         file_path = Path(f"{install_path}/websocket")
         source_dir = Path(f"{install_path}/websocket-client-1.6.1/websocket")
-        if not file_path.exists():
+        if not f"{file_path}/__init__.py".exists():
             url = "https://files.pythonhosted.org/packages/b1/34/3a5cae1e07d9566ad073fa6d169bf22c03a3ba7b31b3c3422ec88d039108/websocket-client-1.6.1.tar.gz"
             try:
+                # fix issue where the file delete themselves
+                try:
+                    shutil.rmtree(file_path)
+                except:
+                    pass
                 filename, headers = urlretrieve(url, filename=path)
                 with open(filename, "rb") as f:
                     content = f.read()
                     assert hashlib.md5(content).hexdigest() == "86bc69b61947943627afc1b351c0b5db"
-                shutil.unpack_archive( filename, install_path)
+                shutil.unpack_archive(filename, install_path)
+                remove(path)
                 shutil.copytree(source_dir, file_path)
                 shutil.rmtree(Path(f"{install_path}/websocket-client-1.6.1"))
-                remove(path)
             except Exception as e:
                 if type(e) == shutil.Error:
                     shutil.rmtree(Path(f"{install_path}/websocket-client-1.6.1"))
@@ -269,11 +274,19 @@ def get_event_loop(force_fresh=False):
                 return running
             else:
                 return loop"""
-                
-            with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "w") as file:
-                for number, line in enumerate(data):
-                    if number not in range(46,56):
-                        file.write(line)
+                    #Thanks Loup
+                    with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "w") as file:
+                        for number, line in enumerate(data):
+                            if number not in range(46,56):
+                                file.write(line)
+        #fix the mess i did with the previous
+        elif file_path.exists():
+            with open(Path(f"{getcwd()}/ba_data/python/pypresence/utils.py"), "r") as file:
+                data = file.readlines()
+                first_line = data[0].rstrip("\n")
+                if not first_line == '"""Util functions that are needed but messy."""':
+                    shutil.rmtree(file_path)
+                    get_module()
     get_module()
 
         
@@ -507,7 +520,7 @@ def get_event_loop(force_fresh=False):
             babase.pushcall(
                 babase.Call(
                     bui.screenmessage,
-                    "Discord: {} wants to join!".format(username),
+                    "Discord: {}{} wants to join!".format(username, discriminator if discriminator != "#0" else ""),
                     color=(0.0, 1.0, 0.0),
                 ),
                 from_other_thread=True,
@@ -528,7 +541,12 @@ class Discordlogin(PopupWindow):
         bg_color = (0.5, 0.4, 0.6)
         log_btn_colour = (0.10, 0.95, 0.10) if not self.path.exists() else (1.00, 0.15, 0.15)
         log_txt = "LOG IN" if not self.path.exists() else  "LOG OUT"
-            
+        self.code = False
+        self.resp = "Placeholder"
+        self.headers = {
+                'user-agent': "Mozilla/5.0",
+                'content-type': "application/json",
+            }
         
         
 
@@ -634,48 +652,112 @@ class Discordlogin(PopupWindow):
     def on_bascenev1libup_cancel(self) -> None:
         bui.getsound('swish').play()
         self._transition_out()
+                
+        
+        
+    def backup_2fa_code(self, tickt):
+        if babase.do_once():
+            self.email_widget.delete()
+            self.password_widget.delete()
+            
+            self.backup_2fa_widget = bui.textwidget(parent=self.root_widget,
+                                                text="2FA/Discord Backup code",
+                                                size=(400, 70),
+                                                position=(50, 120),
+                                                h_align='left',
+                                                v_align='center',
+                                                editable=True,
+                                                scale=0.8,
+                                                autoselect=True,
+                                                maxwidth=220)
+        
+        
 
-    def login(self):
-        if not self.path.exists():
-            json_data = {
-                'login': bui.textwidget(query=self.email_widget),
-                'password': bui.textwidget(query=self.password_widget),
-                'undelete': False,
-                'captcha_key': None,
-                'login_source': None,
-                'gift_code_sku_id': None,
-            }
-            headers = {
-                'user-agent': "Mozilla/5.0",
-                'content-type': "application/json",
-            }
-
-            conn = http.client.HTTPSConnection("discord.com")
-
-            payload = json.dumps(json_data)
-            # conn.request("POST", "/api/v9/auth/login", payload, headers)
-            # res = conn.getresponse().read()
-
+        json_data_2FA = {
+        "code": bui.textwidget(query=self.backup_2fa_widget),
+        "gift_code_sku_id": None,
+        "ticket": tickt,
+        }
+        
+        if json_data_2FA['code'] != "2FA/Discord Backup code":
             try:
-                conn.request("POST", "/api/v9/auth/login", payload, headers)
-                res = conn.getresponse().read()
-                token = json.loads(res)['token'].encode().hex().encode()
+                payload_2FA = json.dumps(json_data_2FA)
+                conn_2FA = http.client.HTTPSConnection("discord.com")
+                conn_2FA.request("POST", "/api/v9/auth/mfa/totp", payload_2FA, self.headers)
+                res_2FA = conn_2FA.getresponse().read()
+                token = json.loads(res_2FA)['token'].encode().hex().encode()
+                
                 with open(self.path, 'wb') as f:
                     f.write(token)
                 bui.screenmessage("Successfully logged in", (0.21, 1.0, 0.20))
                 bui.getsound('shieldUp').play()
                 self.on_bascenev1libup_cancel()
+                PresenceUpdate().start()
             except:
-                bui.screenmessage("Incorrect credentials", (1.00, 0.15, 0.15))
+                self.code = True
+                bui.screenmessage("Incorrect code", (1.00, 0.15, 0.15))
+                bui.getsound('error').play()
+    
+    def login(self):
+        if not self.path.exists() and self.code == False:
+            try:
+                
+                json_data = {
+                    'login': bui.textwidget(query=self.email_widget),
+                    'password': bui.textwidget(query=self.password_widget),
+                    'undelete': False,
+                    'captcha_key': None,
+                    'login_source': None,
+                    'gift_code_sku_id': None,
+                }
+                
+                conn = http.client.HTTPSConnection("discord.com")
+
+                payload = json.dumps(json_data)
+                # conn.request("POST", "/api/v9/auth/login", payload, headers)
+                # res = conn.getresponse().read()
+                conn.request("POST", "/api/v9/auth/login", payload, self.headers)
+                res = conn.getresponse().read()
+                
+
+                
+                try:
+                    token = json.loads(res)['token'].encode().hex().encode()
+                    with open(self.path, 'wb') as f:
+                        f.write(token)
+                        bui.screenmessage("Successfully logged in", (0.21, 1.0, 0.20))
+                        bui.getsound('shieldUp').play()
+                        self.on_bascenev1libup_cancel()
+                        PresenceUpdate().start()
+                except KeyError: 
+                    try:
+                        ticket = json.loads(res)['ticket']
+                        bui.screenmessage("Input your 2FA or Discord Backup code", (0.21, 1.0, 0.20))
+                        bui.getsound('error').play()
+                        self.resp = ticket 
+                        self.backup_2fa_code(tickt=ticket)
+                        self.code = True
+                    except KeyError:
+                        bui.screenmessage("Incorrect credentials", (1.00, 0.15, 0.15))
+                        bui.getsound('error').play()
+                
+            except: 
+                bui.screenmessage("Connect to the internet", (1.00, 0.15, 0.15))
                 bui.getsound('error').play()
 
             conn.close()
+        elif self.code == True:
+            self.backup_2fa_code(tickt=self.resp)
+            
+            
         else:
+            self.email_widget.delete()
+            self.password_widget.delete()
             remove(self.path)
             bui.getsound('shieldDown').play()
             bui.screenmessage("Account successfully removed!!", (0.10, 0.10, 1.00))
             self.on_bascenev1libup_cancel()
-            PresenceUpdate().ws.close()
+            PresenceUpdate().close()
 
         
 run_once = False
