@@ -27,7 +27,7 @@ Shipwreck
 
 
 # KizzyRPC
-If you would like custom rpc for android I consider checking out Kizzy a really great app.
+If you would like custom rpc for android I consider checking out [Kizzy](https://github.com/dead8309/Kizzy), a really great app.
 
 [![](https://dcbadge.vercel.app/api/server/vUPc7zzpV5)](https://discord.gg/vUPc7zzpV5)
 
