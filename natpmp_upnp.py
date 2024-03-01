@@ -5,7 +5,6 @@ import babase
 import bauiv1 as bui
 import bascenev1
 
-import re
 import shutil
 import hashlib
 import threading
