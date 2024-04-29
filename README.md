@@ -38,6 +38,6 @@ If you would like custom rpc for android I consider checking out [Kizzy](https:/
 
 
 # UPNP/NAT-PMP
-This plugin is used to autoport port 43210 to make bombsquad game joinable from the internet for upnp/nat-pmp ready router and support from their ISP.
+This plugin is used to autoport port 43210 to make bombsquad game joinable from the internet for upnp/nat-pmp ready router with upnp support from their ISP.
 This code uses [nat-pmp client](https://github.com/jaraco/nat-pmp) and [upnpy](https://github.com/5kyc0d3r/upnpy).
-The nat-pmp module is to support modern routers and apple devices while upnpy is a fallback for all routers that dont support upnp.
+The nat-pmp module is to support modern routers and apple devices while upnpy is a fallback for all routers that dont support natpmp.
