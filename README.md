@@ -32,7 +32,7 @@ If you would like custom rpc for android I consider checking out [Kizzy](https:/
 [![](https://dcbadge.vercel.app/api/server/vUPc7zzpV5)](https://discord.gg/vUPc7zzpV5)
 
 ## Credits
-- [Mr.Soomthy](https://github.com/imayushsaini)-Author of the new BCS modpack and server scripts and [Mikirog](https://github.com/TheMikirog) - Author of JRMP modpack
+- [Mr.Smoothy](https://github.com/imayushsaini)-Author of the new BCS modpack and server scripts and [Mikirog](https://github.com/TheMikirog) - Author of JRMP modpack
 - [Dliwk](https://github.com/Dliwk)
 - [Vaibhav](https://github.com/dead8309)
 
